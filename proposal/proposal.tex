@@ -310,7 +310,8 @@ D_t = \sum_{v \in V_t} d_t^v
 
 \subsection{Environment Simulator}
 The Simulated Urban MObility (SUMO) environment will be used for experimentation because it has been evaluated and calibrated by the general transportation community \cite{ault2021reinforcement} \cite{sumorl} and is widely used in the literature.
-A 4 x 4 grid structure \ref{fig:intersection_grid} of traffic lights will be used as it is also widely used by other papers \cite{Almeida2022MultiagentRL}. This will necessitate 16 independent agents.
+A 4 x 4 grid structure \ref{fig:intersection_grid} of traffic lights will be used as it is also widely used by other papers \cite{Almeida2022MultiagentRL}.
+This will necessitate 16 independent agents.
 
 \begin{figure}[htbp]
   \centering
@@ -320,27 +321,53 @@ A 4 x 4 grid structure \ref{fig:intersection_grid} of traffic lights will be use
 \end{figure}
 
 \section{Existing Methods}
-% - introduce cost of more sensors problem
 \subsection{Traditional Controllers}
-% - fixed time, max pressure, greedy
+The traffic controllers currently used in most areas today fall into three categories of algorithms: fixed time, max pressure, and greedy.
+Fixed time controllers will set the traffic signal into one of the four modes for a fixed amount of time, cycling through each mode \cite{ault2021reinforcement}.
+Max pressure is the idea of selecting the traffic flow direction based on subtracting the number of cars after the intersection from the number of cars before the intersection \cite{Chen_Wei_Xu_Zheng_Yang_Xiong_Xu_Li_2020}.
+The greedy algorithm selects the mode to allow the maximum queue length direction through.
+
 \subsection{RL Controllers}
-% - performance?
-% - Rl methods, IDQN, IPPO, MPLight, Extended MPLight
-% Self adaptive systems (SAS), ontology + RL agent
+Most popular RL methods have been applied to TSC including Independent Deep Q-Learning Networks (IDQN), Independent Proximal Policy Optimization (IPPO), MPLight (variant of DQN) \cite{Chen_Wei_Xu_Zheng_Yang_Xiong_Xu_Li_2020}, Advantage Actor Critic (A2C), State Action Reward State Action Lambda \(SARSA(\lambda)\), TD methods \cite{Reza2023}, Self Adaptive Systems (SAS), and ontology based RL models \cite{Ghanadbashi2023}.
+Based on the results from each of these papers, IDQN appeared to have the most promising performance and will be discussed further below.
 
 \section{Proposed Method}
 Based on performance data collected in other studies \cite{ault2021reinforcement} \cite{Ghanadbashi2023},
-IDQN is the chosen approach to solve the TSC problem. Other approaches as well as more advanced
-simulation methods such as injected uncertainty \cite{DBLP} are also being considered and may be used
-to increase performance of initial IDQN testing.
+IDQN is the chosen approach to solve the TSC problem.
+IDQN is an off-policy, model-free RL method incorporating the idea of collecting experience tuples as the agent plays episodes.
+The experience is then used to train a deep nerual network and is randomly shuffled to smooth the training data across many past behaviors \cite{DBLP:journals/corr/MnihKSGAWR13}.
+The input to the network is the state information, and the output is a Q-value mapped to each action.
+In the past, non-linear Q-value function approximators (such as a deep nerual network) were unsucessful due to correlations in the sequence of states, and small updates to Q significantly changing the policy \cite{hafiz2020deep}.
+Experience replay and other DQN methods showed to significantly increase the chances of convergeance and improve performance by an order of magnitude \cite{Mnih2015}.
+Additionally, simplifying the deep neural network to output only binary values of whether to take the action or not yielded better performance than mapping a Q-value to each action. This is called binary DQN or CS-DQN \cite{hafiz2020deep}.
+Based on this information, a binary DQN agent for each traffic signal intersection will be used to solve the 4x4 grid TSC environment.
 
 \section{Performance Metrics}
 % - RESCO, injected uncertainty, average vehicle wait time
+% - REinforced Signal COntrol or RESCO is a testbed and benchmark environment for comparison between RL-based signal control algorithms
+REinforced Signal COntrol (RESCO) is a testbed and benchmark environment to help judge performance of RL-based algorithms for TSC. It comes built-in with the SUMO project and will simulate traffic in the same way it was simulated in other benchmark papers \cite{ault2021reinforcement}. This can be used to compare this project with what has already been done.
+The metrics that are relavant to this project include: total wait time for each vehicle, average delay per vehicle, average number of stops, average queue length, and average trip time \cite{Reza2023}.
+Studying how the agents respond to injected uncertainty such as an emergency vehicle or increased traffic demands is also an important metric for designing a robust system \cite{DBLP}.
 % - total waiting time, average delay per vehicle, average number of stops \cite{Reza2023}
 
 \section{Expected Challenges}
+% - injecting uncertainty \cite{DBLP}
 
 \section{Timeline}
+
+\begin{table}
+\centering
+\caption{Project Timeline}
+
+\begin{tabular}{ll}
+Date & Milestone                               \\
+2/19 & 4x4 Grid Environment Setup and Working  \\
+2/26 & IDQN agents learning                    \\
+3/4  & Perform experiments and generate data   \\
+3/18 & Injected uncertainty scenarios          \\
+4/1  & Data compilation and writing           
+\end{tabular}
+\end{table}
 
 \section{Conclusion}
 
