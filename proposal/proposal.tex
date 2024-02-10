@@ -192,7 +192,7 @@
 %- choi1999environment
 % - https://proceedings.neurips.cc/paper_files/paper/1999/file/e8d92f99edd25e2cef48eca48320a1a5-Paper.pdf
 % - traditional MDPs assume dynamics of the environment don't change. Classically, elevators are non-stationary
-% - non-stationary environments don't come with convergeance guarantees that traditional MDPs have
+% - non-stationary environments don't come with convergence guarantees that traditional MDPs have
 % - must be some regularity in the way the environment changes
 % - propose to add "modes" or contexts in addition to the state
 % - Basically you have an MDP for each mode, and a way to detect which mode you are in
@@ -202,7 +202,7 @@
 
 % - hafiz2020deep
 % - https://arxiv.org/pdf/2008.04109.pdf
-% - shared state and rewards, but agent specific action updating in the experience replay pools = simplicity, faster convergeance, and better performance than baseline models
+% - shared state and rewards, but agent specific action updating in the experience replay pools = simplicity, faster convergence, and better performance than baseline models
 % - non-linear Q functions showed to not perform well due to correlations in the sequence of states, small updates to Q significantly changing the policy
 % - experience replay in DQN helps get rid of the correlations by randomizing the experience data used for further training of the network
 % - inter-agent communication is complex
@@ -256,24 +256,25 @@
 % - with replay yields an order of magnitute performance increase
 
 \section{Introduction}
-Traffic Signal Control (TSC) is a problem which reinforcement learning can be applied, aiding in obvious societal problems: air pollution, decrease in speed, delays, and opportunity costs \cite{Almeida2022MultiagentRL}.
+Traffic Signal Control (TSC), a classic control problem applicable to everyone who drives, has exciting potential for reinforcement learning; aiding in obvious societal problems: air pollution, decrease in speed, delays, and opportunity costs \cite{Almeida2022MultiagentRL}.
 Based on travel research done on urban areas, 12-55\% of total commute time is caused by signalized intersections (traffic lights) \cite{ault2021reinforcement}.
 Moreover, modern reinforcement learning (RL) approaches suggest a potential 73\% reduction in that time compared to traditional approaches currently deployed \cite{ault2021reinforcement}.
 The field of traffic signal control contains many ideas to increase traffic efficiency in both the fixed algorithm and RL space.
 However, many advanced solutions come with expensive caveats. For instance, installing advanced sensors, reworking road paths, or replacing traffic lights with roundabouts \cite{DBLP:journals/corr/abs-2004-04778}.
 This project is aimed to study reinforcement learning approaches to TSC that can be deployed to existing metropolitan areas with minimal cost and infrastructure changes.
-Studying how currently deployed traffic detection infrastructure  is contributing to the state space \(S\) of a Partially Observable Markov Decision Process (POMDP) to make informed future infrastructure decisions is also a goal.
-In this paper, we will discuss the TSC problem in terms of the Markov Decision Process (MDP) paridigm; how it is formally described.
+In this paper, we will discuss the TSC problem in terms of the Markov Decision Process (MDP) paradigm; how it is formally described.
 Existing methods will then be explored including what is deployed tradditionally in most urban environments, and what RL methods could also be used.
 Then, our unique solution will be proposed based on information collected comparing a wide variety of methods used previously on the TSC problem \cite{hafiz2020deep} \cite{ault2021reinforcement} \cite{Ghanadbashi2023}.
 Finally, a discussion of evaluation metrics, expected challenges, and timeline of the project will be discussed.
 
 \section{Problem Formulation}
-Multiagent approaches to TSC are POMDPs with non-stationary dynamics, placing them in one of the most difficult classes of problems for RL to solve \cite{Almeida2022MultiagentRL} \cite{DBLP:journals/corr/abs-2004-04778} \cite{choi1999environment}.
-Non-stationary problems do not come with convergeance guarantees of traditional MDPs and the partial observability can cause an aliasing of states causing the agent to miss nuance necessary for optimal policies \cite{choi1999environment} \cite{10.3389/frai.2022.805823}.
-Additionally, centralized agent approaches suffer from Bellman's curse of dimensionality, require unfeasable infrastructure modifications, and have shown suboptimal performance in simulation \cite{DBLP:journals/corr/abs-2004-04778} \cite{ault2021reinforcement}.
+Multiagent approaches to TSC are Partially Observable Markov Decision Proccesses (POMDPs) with non-stationary dynamics, placing them in one of the most difficult classes of problems for RL to solve \cite{Almeida2022MultiagentRL} \cite{DBLP:journals/corr/abs-2004-04778} \cite{choi1999environment}.
+Non-stationary problems do not come with convergence guarantees of traditional MDPs and the partial observability can cause the agent to miss nuance in the state necessary for optimal policies \cite{choi1999environment} \cite{10.3389/frai.2022.805823}.
+In fact, state aliasing is common in POMDPs where the agent finds two states that are different to be the same, resulting in inappropriate actions.
+Additionally, centralized agent approaches suffer from Bellman's curse of dimensionality, require unfeasible infrastructure modifications, and have shown suboptimal performance in simulation \cite{DBLP:journals/corr/abs-2004-04778} \cite{ault2021reinforcement}.
 
 \subsection{State space}
+The state space for traffic signal control is a vector of various traffic-related parameters described below.
 In the TSC problem, the state space is typically modeled as~\ref{eq:state_space} where each time step \(t\) corresponds to five seconds of actual traffic dynamics, \(\rho_1\) and \(\rho_2\) are binary variables \(\rho_1, \rho_2 \in {0, 1}\) indicating the state of the intersection lights, \(g\) indicates if the light has been green for the minumum specified time, \(L\) is the list of all lanes with density \(\Delta_l\) which is the number of vehicles in each lane divided by the capacity of that lane.
 \(q_l\) is the number of queued vehicles in each lane \(l \in L\) \cite{Almeida2022MultiagentRL}.
 
@@ -285,7 +286,12 @@ s_t = [\rho_1, \rho_2, g, \Delta_1, \ldots, \Delta_L, q_1, \ldots, q_L]
 In reality, few intersections contain the sensors needed to make up the state space described in~\ref{eq:state_space}, so it will be interesting to explore how state space restriction affects agent performance.
 
 \subsection{Action space}
-The action space is best described in the \ref{fig:action_space} figure below where the green paths indicate where traffic can flow and the red paths are not allowed. The agent can change the intersection into one of four modes \(a_t \in {a_1, a_2, a_3, a_4}\).
+The action space is best described in figure \ref{fig:action_space} where the green paths indicate where traffic can flow and the red paths are not allowed.
+The agent can change the intersection into one of four modes \(a_t \in {a_1, a_2, a_3, a_4}\).
+There are two direct flow modes and two turning modes.
+In the direct flow modes North to South and East to West, the vehicles are also permitted to take right turns.
+In order to change the intersection into a different mode, a mandatory yellow phase \phi preceeds the mode change.
+In most simulation scenarios, \phy = 2 seconds.
 
 \begin{figure}[htbp]
   \centering
@@ -296,7 +302,10 @@ The action space is best described in the \ref{fig:action_space} figure below wh
 
 \subsection{Reward function}
 In most papers, the cumulative delay reward function \ref{eq:cumulative_delay} is used where \(D_t\) is the sum of all vehicle's wait time \ref{eq:wait_time_sum}.
-Other papers extend this idea to the sum of all vehicle wait time in the system to encourage cooperation between agents \cite{10.3389/frai.2022.805823} or more sophisticated reward functions like total delays imposed by the intersection, traffic pressure, or augmented rewards based on intersection efficiency and ontology adherance \cite{ault2021reinforcement} \cite{Ghanadbashi2023}.
+Other papers extend this idea to the sum of all vehicle wait time in the system to encourage cooperation between agents \cite{10.3389/frai.2022.805823}.
+Furthermore, other sophisticated reward functions such as total delays imposed by the intersection, traffic pressure, augmented rewards based on intersection efficiency, and rewards based on ontology adherance have been explored by some papers \cite{ault2021reinforcement} \cite{Ghanadbashi2023}.
+In this project, the cumulative delay reward function \ref{eq:cumulative_delay} will be used, however, the cumulative delay will be the sum of all vehicles in the system instead of at the intersection level, where \(V_t\) is the set of all vehicles present in the simulation.
+The idea behind this is to encourage the agents to work together rather than develop adversarial relationships.
 
 \begin{equation}
 r_t = D_t - D_{t+1}
@@ -310,8 +319,10 @@ D_t = \sum_{v \in V_t} d_t^v
 
 \subsection{Environment Simulator}
 The Simulated Urban MObility (SUMO) environment will be used for experimentation because it has been evaluated and calibrated by the general transportation community \cite{ault2021reinforcement} \cite{sumorl} and is widely used in the literature.
-A 4 x 4 grid structure \ref{fig:intersection_grid} of traffic lights will be used as it is also widely used by other papers \cite{Almeida2022MultiagentRL}.
+Additionally, SUMO was chosen for its compatability with the OpenAI PettingZoo API which helps create a more standard environment interface for RL systems \cite{terry2021pettingzoo}.
+A 4 x 4 grid structure \ref{fig:intersection_grid} of traffic lights will be used as it is also widely used by other papers \cite{Almeida2022MultiagentRL} and is easily understood.
 This will necessitate 16 independent agents.
+As a future work item, studying how agents trained on a 4 x 4 grid environment transfer to more complex environments such as the cities of Cologne or Ingolstadt will be interesting.
 
 \begin{figure}[htbp]
   \centering
@@ -325,7 +336,7 @@ This will necessitate 16 independent agents.
 The traffic controllers currently used in most areas today fall into three categories of algorithms: fixed time, max pressure, and greedy.
 Fixed time controllers will set the traffic signal into one of the four modes for a fixed amount of time, cycling through each mode \cite{ault2021reinforcement}.
 Max pressure is the idea of selecting the traffic flow direction based on subtracting the number of cars after the intersection from the number of cars before the intersection \cite{Chen_Wei_Xu_Zheng_Yang_Xiong_Xu_Li_2020}.
-The greedy algorithm selects the mode to allow the maximum queue length direction through.
+The greedy algorithm selects the mode that allows the direction with maximum queue length through.
 
 \subsection{RL Controllers}
 Most popular RL methods have been applied to TSC including Independent Deep Q-Learning Networks (IDQN), Independent Proximal Policy Optimization (IPPO), MPLight (variant of DQN) \cite{Chen_Wei_Xu_Zheng_Yang_Xiong_Xu_Li_2020}, Advantage Actor Critic (A2C), State Action Reward State Action Lambda \(SARSA(\lambda)\), TD methods \cite{Reza2023}, Self Adaptive Systems (SAS), and ontology based RL models \cite{Ghanadbashi2023}.
@@ -338,9 +349,12 @@ IDQN is an off-policy, model-free RL method incorporating the idea of collecting
 The experience is then used to train a deep nerual network and is randomly shuffled to smooth the training data across many past behaviors \cite{DBLP:journals/corr/MnihKSGAWR13}.
 The input to the network is the state information, and the output is a Q-value mapped to each action.
 In the past, non-linear Q-value function approximators (such as a deep nerual network) were unsucessful due to correlations in the sequence of states, and small updates to Q significantly changing the policy \cite{hafiz2020deep}.
-Experience replay and other DQN methods showed to significantly increase the chances of convergeance and improve performance by an order of magnitude \cite{Mnih2015}.
+Experience replay and other DQN methods showed to significantly increase the chances of convergence and improve performance by an order of magnitude \cite{Mnih2015}.
 Additionally, simplifying the deep neural network to output only binary values of whether to take the action or not yielded better performance than mapping a Q-value to each action. This is called binary DQN or CS-DQN \cite{hafiz2020deep}.
 Based on this information, a binary DQN agent for each traffic signal intersection will be used to solve the 4x4 grid TSC environment.
+An off-policy action selection method known as \eps-greedy will be used, where \eps is the probability the agent will select a random action instead of following the learned policy.
+Higher values of \eps encourage exploration, while lower values encourage exploitation.
+The value of \eps does not have to be constant throughout the learning process, and choosing an \eps value that decays linearly from 0.99 to 0.01
 
 \section{Performance Metrics}
 % - RESCO, injected uncertainty, average vehicle wait time
@@ -351,6 +365,9 @@ Studying how the agents respond to injected uncertainty such as an emergency veh
 % - total waiting time, average delay per vehicle, average number of stops \cite{Reza2023}
 
 \section{Expected Challenges}
+The non-stationary nature of multi-agent RL problems is known to cause divergance problems due to the constantly changing dynamics.
+This can be somewhat mitigated by applying a scenario that is consistent accross training, but the dynamics will still be changing due to the other agents' learning \cite{DBLP:journals/corr/abs-2004-04778}.
+Introducing context switches by changing the scenario, for example, making vehicles flow in waves to simulate rush hour is critical to designing a robust traffic system, but will be out of scope of the initial research goals.
 % - injecting uncertainty \cite{DBLP}
 
 \section{Timeline}
