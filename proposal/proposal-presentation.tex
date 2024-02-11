@@ -48,8 +48,8 @@
       \begin{itemize}
       \item Traffic Signal Control (TSC) is a Partially Observable Markov Decision Process (POMDP), meaning the agent does not have a full picture of the state.
       \item Multiagent approaches introduce non-stationary dynamics meaning the state transition and reward probabilities are not static.
-      \item State aliasing occurs in POMDPs where the agent finds two states that are different to be the same, resulting in inapropriate actions. 
-      \item Centralized approaches have curse of dimensionality or require unfeasible infrastructure.
+      \item State aliasing occurs in POMDPs where the agent finds two states that are different to be the same, resulting in inappropriate actions. 
+      \item Centralized approaches have the curse of dimensionality or require unfeasible infrastructure.
       \end{itemize}
       % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
 \end{frame}
@@ -167,7 +167,7 @@
       \item IDQN is an off-policy, model-free RL method incorporating the idea of collecting experience tuples as the agent plays episodes.
       \item A deep neural network is used as a Q function approximator. Input is the state vector, output is Q values.
       \item Experience tuples used to train the deep neural network. This is known as experience replay.
-      \item Actions are selected based on \(\epsilon\)-greedy algorithm where \(\epsilon\) is the probability the agent will chose a random action.
+      \item Actions are selected based on \(\epsilon\)-greedy algorithm where \(\epsilon\) is the probability the agent will choose a random action.
       \item Higher values of \(\epsilon\) result in more exploration, while lower values result in more exploitation.
       \end{itemize}
       % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
@@ -193,7 +193,7 @@
       \begin{itemize}
       \item The non-stationary nature of multiagent RL problems is known to cause divergence problems due to the constantly changing dynamics.      \end{itemize}
       \item This can be somewhat mitigated by applying a scenario that is consistent across training, but the dynamics will still be changing due to the other agents' learning.
-      \item Introducing context switches by changing the scenario, for example, making vehicles flow in waves to simulate rush hour is critical to designing a robust traffic system, but will be out of the scope of the initial research goals.
+      \item Introducing context switches by changing the scenario, for example, making vehicles flow in waves to simulate rush hour is critical to designing a robust traffic system but will be out of the scope of the initial research goals.
       \end{itemize}
       % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
 \end{frame}
