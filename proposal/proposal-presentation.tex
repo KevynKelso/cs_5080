@@ -40,8 +40,8 @@
 \begin{frame}[bg=arguelles.png]
       \frametitle{Problem Introduction}
       \begin{itemize}
-      \item 12-55\% of total commute time is caused by signalized intersections.
-      \item RL approaches suggest a 73\% decrease in that time by efficiently controlling traffic signals.
+      \item 12-55\% of total commute time is caused by signalized intersections \cite{ault2021reinforcement}.
+      \item RL approaches suggest a 73\% decrease in that time by efficiently controlling traffic signals \cite{ault2021reinforcement}.
       \item This project aims to reproduce and improve upon existing RL methods.
       \end{itemize}
       % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
@@ -53,10 +53,10 @@
 \begin{frame}[bg=arguelles.png]
       \frametitle{Problem Formulation}
       \begin{itemize}
-      \item Traffic Signal Control (TSC) is a Partially Observable Markov Decision Process (POMDP), meaning the agent does not have a full picture of the state.
-      \item Multiagent approaches introduce non-stationary dynamics meaning the state transition and reward probabilities are not static.
+      \item Traffic Signal Control (TSC) is a Partially Observable Markov Decision Process (POMDP), meaning the agent does not have a full picture of the state\cite{Almeida2022MultiagentRL} \cite{DBLP:journals/corr/abs-2004-04778} \cite{choi1999environment}.
+      \item Multiagent approaches introduce non-stationary dynamics meaning the state transition and reward probabilities are not static\cite{choi1999environment} \cite{10.3389/frai.2022.805823}.
       \item State aliasing occurs in POMDPs where the agent finds two states that are different to be the same, resulting in inappropriate actions. 
-      \item Centralized approaches have the curse of dimensionality or require unfeasible infrastructure.
+      \item Centralized approaches have the curse of dimensionality or require unfeasible infrastructure\cite{DBLP:journals/corr/abs-2004-04778} \cite{ault2021reinforcement}.
       \end{itemize}
       % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
 \end{frame}
@@ -64,7 +64,7 @@
 \begin{frame}[bg=arguelles.png]
       \frametitle{State Space}
       \begin{itemize}
-      \item Modeled as vector in \ref{eq:state_space}
+        \item Modeled as vector in \ref{eq:state_space}\cite{Almeida2022MultiagentRL}.
       \item Each time step \(t\) corresponds to five seconds of actual traffic dynamics.
       \item \(\rho_1\) and \(\rho_2\) are binary variables \(\rho_1, \rho_2 \in \{0, 1\}\) indicating the state of the intersection lights.
       \item \(g\) indicates if the light has been green for the minimum specified time.
@@ -99,7 +99,7 @@ s_t = [\rho_1, \rho_2, g, \Delta_1, \ldots, \Delta_L, q_1, \ldots, q_L]
 \begin{frame}[bg=arguelles.png]
       \frametitle{Reward Function}
       \begin{itemize}
-      \item We use cumulative delay reward function \ref{eq:cumulative_delay} where \(D_t\) is the sum of all vehicles wait time \ref{eq:wait_time_sum}.
+      \item We use cumulative delay reward function \ref{eq:cumulative_delay} where \(D_t\) is the sum of all vehicles wait time \ref{eq:wait_time_sum}\cite{10.3389/frai.2022.805823}.
       \item \(V_t\) is the set of all vehicles in the simulation.
       \end{itemize}
       % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
@@ -118,9 +118,9 @@ s_t = [\rho_1, \rho_2, g, \Delta_1, \ldots, \Delta_L, q_1, \ldots, q_L]
 \begin{frame}[bg=arguelles.png]
       \frametitle{Environment Simulator}
       \begin{itemize}
-      \item Simulated Urban MObility (SUMO) will be used.
-      \item Widely accepted and used by the general transportation community.
-      \item OpenAI PettingZoo API compatible.
+      \item Simulated Urban MObility (SUMO) will be used\cite{sumorl}.
+      \item Widely accepted and used by the general transportation community\cite{ault2021reinforcement}.
+      \item OpenAI PettingZoo API compatible\cite{terry2021pettingzoo}.
       \item Will use 4 x 4 grid scenario.
       \end{itemize}
       % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
@@ -128,7 +128,7 @@ s_t = [\rho_1, \rho_2, g, \Delta_1, \ldots, \Delta_L, q_1, \ldots, q_L]
     \begin{figure}[htbp]
       \centering
       \includegraphics[width=0.4\linewidth]{4x4.png}
-      \caption{4 x 4 intersection grid}
+      \caption{4 x 4 intersection grid\cite{DBLP:journals/corr/abs-2004-04778}}
       \label{fig:intersection_grid}
     \end{figure}
 
@@ -142,8 +142,8 @@ s_t = [\rho_1, \rho_2, g, \Delta_1, \ldots, \Delta_L, q_1, \ldots, q_L]
 \begin{frame}[bg=arguelles.png]
       \frametitle{Existing Methods}
       \begin{itemize}
-      \item Traditional controllers use either fixed time, max pressure, or greedy.
-      \item Independent Deep Q-Learning Networks (IDQN), Independent Proximal Policy Optimization (IPPO), MPLight (variant of DQN), Feudal Multiagent Advantage Actor-Critic (FMA2C, MA2C), State Action Reward State Action Lambda \(SARSA(\lambda)\), TD methods, Self Adaptive Systems (SAS), and ontology-based RL models.
+      \item Traditional controllers use either fixed time, max pressure, or greedy\cite{ault2021reinforcement}\cite{Chen_Wei_Xu_Zheng_Yang_Xiong_Xu_Li_2020}.
+      \item Independent Deep Q-Learning Networks (IDQN), Independent Proximal Policy Optimization (IPPO), MPLight (variant of DQN)\cite{Chen_Wei_Xu_Zheng_Yang_Xiong_Xu_Li_2020}, Feudal Multiagent Advantage Actor-Critic (FMA2C, MA2C)\cite{DBLP:journals/corr/abs-1903-04527}, State Action Reward State Action Lambda \(SARSA(\lambda)\), TD methods\cite{Reza2023}, Self Adaptive Systems (SAS), and ontology-based RL models\cite{Ghanadbashi2023}.
       \end{itemize}
       % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
 
@@ -180,10 +180,10 @@ s_t = [\rho_1, \rho_2, g, \Delta_1, \ldots, \Delta_L, q_1, \ldots, q_L]
       \frametitle{Chosen Method}
       \begin{itemize}
       \item IDQN is the chosen approach to solve the TSC problem.
-      \item IDQN is an off-policy, model-free RL method incorporating the idea of collecting experience tuples as the agent plays episodes.
+      \item IDQN is an off-policy, model-free RL method incorporating the idea of collecting experience tuples as the agent plays episodes\cite{DBLP:journals/corr/MnihKSGAWR13}.
       \item A deep neural network is used as a Q function approximator. Input is the state vector, output is Q values.
       \item Experience tuples used to train the deep neural network. This is known as experience replay.
-      \item Actions are selected based on \(\epsilon\)-greedy algorithm where \(\epsilon\) is the probability the agent will choose a random action.
+      \item Actions are selected based on \(\epsilon\)-greedy algorithm where \(\epsilon\) is the probability the agent will choose a random action\cite{Mnih2015}.
       \item Higher values of \(\epsilon\) result in more exploration, while lower values result in more exploitation.
       \end{itemize}
       % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
@@ -192,12 +192,12 @@ s_t = [\rho_1, \rho_2, g, \Delta_1, \ldots, \Delta_L, q_1, \ldots, q_L]
 \begin{frame}[bg=arguelles.png]
       \frametitle{Performance Metrics}
       \begin{itemize}
-      \item REinforced Signal COntrol (RESCO) is a testbed and benchmark environment to help judge the performance of RL-based algorithms for TSC.
+      \item REinforced Signal COntrol (RESCO) is a testbed and benchmark environment to help judge the performance of RL-based algorithms for TSC\cite{ault2021reinforcement}.
       \item Total wait time for each vehicle.
       \item Average delay per vehicle.
       \item Average number of stops per vehicle.
       \item Average queue length.
-      \item Average trip time.
+      \item Average trip time\cite{Reza2023}.
       \end{itemize}
       % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
 \end{frame}
@@ -208,7 +208,7 @@ s_t = [\rho_1, \rho_2, g, \Delta_1, \ldots, \Delta_L, q_1, \ldots, q_L]
       \frametitle{Expected Challenges}
       \begin{itemize}
       \item The non-stationary nature of multiagent RL problems is known to cause divergence problems due to the constantly changing dynamics.
-      \item This can be somewhat mitigated by applying a scenario that is consistent across training, but the dynamics will still be changing due to the other agents' learning.
+      \item This can be somewhat mitigated by applying a scenario that is consistent across training, but the dynamics will still be changing due to the other agents' learning\cite{DBLP:journals/corr/abs-2004-04778}.
       \item Introducing context switches by changing the scenario, for example, making vehicles flow in waves to simulate rush hour is critical to designing a robust traffic system but will be out of the scope of the initial research goals.
       \end{itemize}
       % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
@@ -244,6 +244,12 @@ s_t = [\rho_1, \rho_2, g, \Delta_1, \ldots, \Delta_L, q_1, \ldots, q_L]
       \centering
       \includegraphics[width=0.4\linewidth]{black_mountain_lion.jpg}
     \end{figure}
+\end{frame}
+
+\begin{frame}[allowframebreaks]
+        \frametitle{References}
+        \bibliographystyle{amsalpha}
+        \bibliography{proposal.bib}
 \end{frame}
 
 \end{document}
