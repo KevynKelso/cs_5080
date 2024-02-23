@@ -166,49 +166,92 @@ test
 
     \item Assume the agent uses a Monte Carlo method to learn an optimal policy starting with the equi-random policy. It involves improving the random policy slowly using a greedy approach and stopping when the policy does not improve any more. Write the algorithm in terms of pseudocode and briefly explain with reference to lines in the pseudocode.
 
+
     \begin{algorithm}
-    \caption{Every Visit Monte Carlo Approach for Solving a 5x5 Maze}
-    \begin{algorithmic}[1] % Numbers each line
-    \Procedure{generateOptimizedPolicy}{$\gamma$}
-	\State $policy \gets RandomPolicy()$
-	\State $V(s) \gets 0$ for all $s \in S$
-	\State $Returns(s) \gets []$ for all $s \in S$
-	\State $PolicyChanged \gets \text{True}$
-	\State $previousActions \gets []$
-	\State $actionsTaken \gets []$
-	\While{$PolicyChanged$}
-	    \State $Episode \gets GenerateEpisode(policy)$
-	    \State $G \gets 0$
-	    \For{$(s, a, r) \in \text{reversed}(Episode)$} \label{alg:reversed_episode}
-		\State $G \gets \gamma \times G + r$
-		\State $Returns(s).append(G)$
-		\State $V(s) \gets \text{Average}(Returns(s))$
-		\State $actionsTaken.append(a)$
-	    \EndFor
-	    \State $OldPolicy \gets policy$
-	    \State $policy \gets GreedyPolicy(V)$ \label{alg:greedy_policy}
-	    \If{$actionsTaken == previousActions$} \label{alg:action_compare}
-		\State $PolicyChanged \gets \text{False}$
-	    \EndIf
-	    \State $previousActions \gets actionsTaken$
-	\EndWhile
-	\State \textbf{return} $policy$
-    \EndProcedure
+    \caption{Optimize Policy with Every-Visit Monte Carlo}
+    \begin{algorithmic}[1]
+    \State Initialize policy to $\epsilon$-greedy policy \label{alg:greedy_policy}
+    \State Initialize $V(s)$ to 0 for all $s$ in dynamics.keys()
+    \State Set $V(\text{goal\_state})$ to 100
+    \State Initialize returns to an empty list for all $s$ in dynamics.keys()
+    \State Initialize policy\_changed to True
+    \State Initialize num\_iterations to 0
+    \State Initialize actions\_taken to an empty list
+    \While{policy\_changed}
+	\State Update $\epsilon$ with decay
+	\State Generate an episode using current policy
+	\State Get original policy output with compare\_policy
+	\State Initialize goodness to 0
+	\For{each step $(s, a, r)$ in episode, reversed}\label{alg:reversed_episode}
+	    \State Update goodness with discount and reward
+	    \State Append goodness to returns for state $s$
+	    \State Update $V(s)$ with average of returns for $s$
+	    \State Append action $a$ to actions\_taken
+	\EndFor
+	\State Get new policy output with compare\_policy \label{alg:action_compare}
+	\If{policy unchanged and episode not truncated}
+	    \State Set policy\_changed to False
+	    \State Append reversed actions\_taken and num\_iterations to file
+	\EndIf
+	\State Clear actions\_taken
+	\State Increment num\_iterations
+    \EndWhile
+    \State \Return value\_function
     \end{algorithmic}
-	\label{alg:every_visit_mc}
+      \label{alg:every_visit_mc}
     \end{algorithm}
+
+
+
+
+    % \begin{algorithm}
+    % \caption{Every Visit Monte Carlo Approach for Solving a 5x5 Maze}
+    % \begin{algorithmic}[1] % Numbers each line
+    % \Procedure{generateOptimizedPolicy}{$\gamma$}
+    %     \State $policy \gets RandomPolicy()$
+    %     \State $V(s) \gets 0$ for all $s \in S$
+    %     \State $Returns(s) \gets []$ for all $s \in S$
+    %     \State $PolicyChanged \gets \text{True}$
+    %     \State $previousActions \gets []$
+    %     \State $actionsTaken \gets []$
+    %     \While{$PolicyChanged$}
+    %         \State $Episode \gets GenerateEpisode(policy)$
+    %         \State $G \gets 0$
+    %         \For{$(s, a, r) \in \text{reversed}(Episode)$} \label{alg:reversed_episode}
+    %     	\State $G \gets \gamma \times G + r$
+    %     	\State $Returns(s).append(G)$
+    %     	\State $V(s) \gets \text{Average}(Returns(s))$
+    %     	\State $actionsTaken.append(a)$
+    %         \EndFor
+    %         \State $OldPolicy \gets policy$
+    %         \State $policy \gets GreedyPolicy(V)$ \label{alg:greedy_policy}
+    %         \If{$actionsTaken == previousActions$} \label{alg:action_compare}
+    %     	\State $PolicyChanged \gets \text{False}$
+    %         \EndIf
+    %         \State $previousActions \gets actionsTaken$
+    %     \EndWhile
+    %     \State \textbf{return} $policy$
+    % \EndProcedure
+    % \end{algorithmic}
+    %     \label{alg:every_visit_mc}
+    % \end{algorithm}
 
 	\begin{itemize}
 	    \item The pseudocode in \ref{alg:every_visit_mc} is adapted from the every visit Monte Carlo approach \cite{SuttonBartoRLBook}.
-	    \item Policies are compared based on actions taken in the episode (line \ref{alg:action_compare}) which is not the best way to compare policies in the event there exist actions which have no effect on the value function, but this way seems to work sufficiently for this problem \cite{Morales2020GrokkingDL}.
-	    \item This algorithm does not use any soft policy approaches where the GreedyPolicy function on line \ref{alg:greedy_policy} has a 100\% chance of choosing the action which will bring it to the highest valued next state. Given there are no equally valued states. In that case, the GreedyPolicy will choose the last highest valued next state.
+	    \item Policies are compared based on actions taken wih $\epsilon=0$ (line \ref{alg:action_compare}).
 	    \item The episode is unpacked in reverse to most efficiently calculate $G_t$ (line \ref{alg:reversed_episode}), using a dynamic programming approach to calculate the goodness of each episode.
+	    \item An epsilon decay was added to encourage maximum exploration at the begining of training, slowly transitioning to more exploitation. Epsilon decays according to \ref{eq:eps_decay}.
 	\end{itemize}
 
     \item Implement the algorithm using any programming language of choice. Run the algorithm several times. Does it produce the same policy every time? Show the policy (policies) learned. Explain any differences if any. Change any relevant parameters and rerun a few times. Comment on how changes in parameter values changes learning.
 	\begin{itemize}
 	    \item The generalized policy iteration (GPI) algorithm above was implemented in Python. Because the dynamics of the environment were implemented such that the state transitions were known to the agent, only the value function $V(s)$ was needed for policy improvement. It would also be straightforward to change this to use the action-value function $q(s,a)$ if the state transitions were unknown to the agent.
 	    \item Running the algorithm 100,000 times with discount factor $\gamma=0.9$ yeilded two "optimal" policies $\pi_{*1}$ \ref{eq:pi1} (visualized in \ref{fig:pi1}) and $\pi_{*2}$ \ref{eq:pi2} (visualized in \ref{fig:pi2})
+
+	    \begin{equation}
+		\label{eq:eps_decay}
+		\epsilon = e^{-0.1 \times \text{iteration}}
+	    \end{equation}
 
 	    \begin{gather}
 		\pi_{*1} = \{D,D,D,R,R,R,R,D\} \\
