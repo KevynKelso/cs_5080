@@ -7,3 +7,7 @@
 *.nav
 *.snm
 *.out
+*.pyc
+*.csv
+*.sty
+*.bst
