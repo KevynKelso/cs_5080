@@ -1,0 +1,18 @@
+# Constants
+OBSTACLES_DEFAULT = [(1, 2), (2, 2), (3, 2), (4, 2), (2, 4)]
+
+LEFT = 0
+RIGHT = 1
+DOWN = 2
+UP = 3
+ACTIONS = [LEFT, RIGHT, DOWN, UP]
+
+
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GREY = (192, 192, 192)
+START_STATE = (0, 0)
+GOAL_STATE = (4, 4)
+GRID_SIZE = (5, 5)
+OBSTACLE_COLOR = (128, 128, 128)
+
