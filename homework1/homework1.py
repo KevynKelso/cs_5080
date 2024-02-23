@@ -1,3 +1,4 @@
+from collections.abc import Callable
 import random
 from tqdm import tqdm
 import numpy as np
@@ -9,8 +10,6 @@ import pygame
 import sys
 from pygame_utils import (
     WHITE,
-    START_STATE,
-    GOAL_STATE,
     draw_maze,
     generate_maze,
 )
@@ -111,30 +110,29 @@ def greedy_policy(state: tuple, p: dict, value_func: dict) -> int:
         if value_func[next_state] > max_value:
             max_value = value_func[next_state]
             max_act = act
-        if next_state == GOAL_STATE:
-            return act
 
-    # print(f"{state} -> {p[state][max_act][1]} {max_act}")
     return max_act
 
 
-def generate_episode(policy, dynamics, value_func):
+def generate_episode(policy, dynamics, value_func, eps):
     episode = []
     terminated = False
-    state = START_STATE
+    truncated = False
+    state = start_state
     count = 0
     while not terminated:
-        action = policy(state, dynamics, value_func)
+        action = policy(state, dynamics, value_func, eps)
         next_state = dynamics[state][action][1]
-        reward = 1 if next_state == GOAL_STATE else 0
+        reward = 1 if next_state == goal_state else 0
         episode.append((state, action, reward))
         terminated = dynamics[state][action][2]
         state = next_state
         count += 1
         if count > 100:
             terminated = True
+            truncated = True
 
-    return episode
+    return episode, truncated
 
 
 def eps_greedy_policy(state: tuple, p: dict, value_func: dict, eps: float):
@@ -150,8 +148,6 @@ def eps_greedy_policy(state: tuple, p: dict, value_func: dict, eps: float):
         if value_func[next_state] > max_value:
             max_value = value_func[next_state]
             exploit_act = act
-        if next_state == GOAL_STATE:
-            exploit_act = act
 
     # exploration action
     explore_act = random.choice(available_actions)
@@ -162,17 +158,33 @@ def eps_greedy_policy(state: tuple, p: dict, value_func: dict, eps: float):
         return exploit_act
 
 
-def optimize_policy_every_visit_mc(dynamics):
-    gamma = 0.2
-    policy = greedy_policy
+def compare_policy(p: dict, value_func: dict, policy: Callable[[tuple, dict, dict, float], int]) -> dict:
+    policy_output = dict()
+    for state in p.keys():
+        try:
+            # get policy output with no exploration (eps = 0)
+            policy_output[state] = policy(state, p, value_func, 0.0)
+        except TypeError:
+            # ignore the error thrown if there are no actions for state
+            pass
+
+    return policy_output
+
+
+
+def optimize_policy_every_visit_mc(dynamics, gamma, eps):
+    policy = eps_greedy_policy
     value_func = {s: 0 for s in dynamics.keys()}
+    value_func[goal_state] = 100
     returns = {s: [] for s in dynamics.keys()}
     policy_changed = True
-    actions_taken = []
-    previous_actions_taken = []
     num_iterations = 0
+    actions_taken = []
     while policy_changed:
-        episode = generate_episode(policy, dynamics, value_func)
+        eps = 2**(-0.1*num_iterations)
+        print(f"eps = {eps}")
+        episode, truncated = generate_episode(policy, dynamics, value_func, eps)
+        policy_output_orig = compare_policy(dynamics, value_func, policy)
         goodness = 0
         for s, a, r in reversed(episode):
             goodness = gamma * goodness + r
@@ -180,18 +192,25 @@ def optimize_policy_every_visit_mc(dynamics):
             value_func[s] = sum(returns[s]) / len(returns[s])
             actions_taken.append(a)
 
-        hard_policy = lambda s: policy(s, dynamics, value_func)
-        screen.fill(WHITE)
-        draw_maze(
-            OBSTACLES_DEFAULT,
-            hard_policy,
-            dynamics,
-            show_policy=True,
-            value_func=value_func,
-        )
-        pygame.display.update()
-        pygame.image.save(screen, f"{num_iterations}.jpg")
-        if actions_taken == previous_actions_taken:
+        # hard_policy = lambda s: policy(s, dynamics, value_func, 0.0)
+        # screen.fill(WHITE)
+        # draw_maze(
+        #     screen,
+        #     cell_size,
+        #     start_state,
+        #     goal_state,
+        #     grid_size,
+        #     obstacles,
+        #     policy=hard_policy,
+        #     dynamics=dynamics,
+        #     show_policy=True,
+        #     value_func=value_func,
+        # )
+        # pygame.display.update()
+        # pygame.image.save(screen, f"{num_iterations}.jpg")
+
+        policy_output_new = compare_policy(dynamics, value_func, policy)
+        if policy_output_orig == policy_output_new and not truncated:
             policy_changed = False
             with open("optimal-actions.csv", "a") as f:
                 f.write(
@@ -199,27 +218,36 @@ def optimize_policy_every_visit_mc(dynamics):
                     + f",{num_iterations+1}\n"
                 )
 
-        previous_actions_taken = actions_taken
         actions_taken = []
         num_iterations += 1
 
+    print(f"convergence in {num_iterations} iterations")
     return value_func
 
 
 def main():
     global screen, cell_size, start_state, goal_state, grid_size, obstacles
-    grid_size = (30, 30)
+    grid_size = (5, 5)
     obstacles = generate_maze(grid_size[0] // 2)
-    print(obstacles)
-    start_state = (1, 1)
+    start_state = (1,1)
     goal_state = (grid_size[0] - 1, grid_size[1] - 1)
+    cell_size = int(-0.03 * (5 - grid_size[0]) ** 2 + 50)
+    screen_size = (cell_size * grid_size[0], cell_size * grid_size[1])
+    screen = pygame.display.set_mode(screen_size)
+
+    # original problem
+    obstacles = OBSTACLES_DEFAULT
+    start_state = (0, 0)
+    goal_state = (4, 4)
+
+    print(obstacles)
 
     p = generate_dynamics(grid_size, goal_state, obstacles)
     validate_dynamics(obstacles, p, grid_size)
     pp = PrettyPrinter(indent=2)
     pp.pprint(p)
-    return
 
+    value_func = optimize_policy_every_visit_mc(p, 0.9, 0.5)
     # for _ in tqdm(range(5000)):
     #     value_func = optimize_policy_every_visit_mc(p)
 
@@ -229,16 +257,8 @@ def main():
     # optimal_polices = df[df.columns[:-1]]
     # print(optimal_polices.drop_duplicates())
 
-    cell_size = int(-0.03 * (5 - grid_size[0]) ** 2 + 50)
-    print(cell_size)
-    screen_size = (cell_size * grid_size[0], cell_size * grid_size[1])
-    print(screen_size)
-
-    # CELL_SIZE = 50
-    # SCREEN_SIZE = (250*2+1, 250*2 +1)
-    screen = pygame.display.set_mode(screen_size)
     running = True
-    redraw = True
+    redraw = False
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -249,12 +269,12 @@ def main():
             draw_maze(
                 screen,
                 cell_size,
-                (1, 1),
-                (grid_size[0] - 1, grid_size[0] - 1),
+                start_state,
+                goal_state,
                 grid_size,
                 obstacles,
-                random_policy,
-                None,
+                policy=random_policy,
+                dynamics=None,
                 show_policy=False,
                 value_func=None,
             )
