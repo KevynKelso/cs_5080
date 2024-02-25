@@ -36,10 +36,21 @@ def generate_maze(grid_size):
                 carve_maze(nx, ny)
     
     carve_maze(start_x, start_y)
+
+    # remove that border
+    for col in range(grid_size):
+        maze[0][col] = ' '
+        maze[grid_size * 2][col] = ' '
+
+    for row in range(grid_size):
+        maze[row][0] = ' '
+        maze[row][grid_size * 2] = ' '
+
+    maze[grid_size * 2 - 2][grid_size * 2 - 2] = ' '
     
     # Print the maze
-    for row in maze:
-        print(' '.join(row))
+    # for row in maze:
+    #     print(' '.join(row))
 
     obstacles = []
     for row in range(grid_size * 2 + 1):
@@ -49,7 +60,7 @@ def generate_maze(grid_size):
 
     return obstacles
 
-def draw_maze(screen, cell_size, start_state, goal_state, grid_size, obstacles, policy=None, dynamics=None, show_policy=False, value_func=None):
+def draw_maze(screen, cell_size, start_state, goal_state, grid_size, obstacles, policy=None, dynamics=None, show_policy=False, value_func=None, path=None):
     pygame.display.set_caption(f"{grid_size[0]}x{grid_size[1]} Maze")
     font = pygame.font.SysFont(None, 24)
     for row in range(grid_size[1]):
@@ -58,14 +69,18 @@ def draw_maze(screen, cell_size, start_state, goal_state, grid_size, obstacles, 
             pygame.draw.rect(screen, WHITE, rect, 1)
             if (col, row) in obstacles:
                 pygame.draw.rect(screen, OBSTACLE_COLOR, rect)
-            elif show_policy:
+                continue
+            if show_policy:
                 try:
                     direction = policy((col, row))
-                    draw_arrow(screen, rect, direction)
+                    color = None
+                    if path and (col,row) in path:
+                        color = (255,0,0)
+                    draw_arrow(screen, rect, direction, color)
                 except TypeError:
                     pass
             if value_func and (col, row) not in obstacles:
-                val = font.render(str(round(value_func[(col, row)], 3)), True, BLACK)
+                val = font.render(str(round(value_func[(col, row)], 2)), True, BLACK)
                 screen.blit(val, rect)
 
     start_rect = pygame.Rect(start_state[0] * cell_size, start_state[1] * cell_size, cell_size, cell_size)
@@ -122,14 +137,18 @@ def draw_up_arrow(surface, rect, color):
 
     pygame.draw.polygon(surface, color, point_list)
 
-def draw_arrow(surface, rect, direction):
+def draw_arrow(surface, rect, direction, color=None):
     if direction == LEFT:
-        draw_left_arrow(surface, rect, (32,32,32))
+        draw_color = (32,32,32) if not color else color
+        draw_left_arrow(surface, rect, draw_color)
     elif direction == RIGHT:
-        draw_right_arrow(surface, rect, (64,64,64))
+        draw_color = (64,64,64) if not color else color
+        draw_right_arrow(surface, rect, draw_color)
     elif direction == DOWN:
-        draw_down_arrow(surface, rect, (128,128,128))
+        draw_color = (128,128,128) if not color else color
+        draw_down_arrow(surface, rect, draw_color)
     elif direction == UP:
-        draw_up_arrow(surface, rect, (96,96,96))
+        draw_color = (96,96,96) if not color else color
+        draw_up_arrow(surface, rect, draw_color)
 
 
