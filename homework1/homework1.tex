@@ -137,17 +137,20 @@
 
 \maketitle
 
-\section{Questions}
-\begin{enumerate}
-    \item How would you represent the various components that are required to program this reinforcement learning agent? Discuss each component and how you implement it. Explain how you model the barriers, and how you make sure the agent does not fall off the edges.
+\begin{abstract}
+\end{abstract}
+
+\section{Introduction}
+
+\section{Question 1}
 	\begin{itemize}
-	    \item I plan to follow the model given in \cite{Morales2020GrokkingDL} where the dynamics are represented as a nested dictionary in Python. First, the outer dictionary keys will include all the states of the grid environment. Then, an inner dictionary will be the value for each state element containing a key for each action, and a value with a list of all transitions for the state-action pair.
+	    \item For this project, the model given in \cite{Morales2020GrokkingDL} where the dynamics are represented as a nested dictionary in Python will be used. First, the outer dictionary keys will include all the states of the grid environment. Then, an inner dictionary will be the value for each state element containing a key for each action, and a value with a list of all transitions for the state-action pair.
 	    \item The list will contain: the probability of that transition occurring given the state and action (in this case the probabilities are always 1 due to the non-stochastic nature of the problem), the next state (represented as an integer), the reward (all 0 except for the goal state), and a flag to tell whether the next state is terminal.
-	    \item The barriers will be a property of the dynamics dictionary. The actions that would lead the agent to a barrier state will not be included in the dynamics, making it impossible to transition to those barrier states.
-	    \item The same idea is applied to the edges.
-	    \item Ideally, these dynamics will be automatically generated based on a given grid environment.
+	    \item The barriers will be represented impicitly based on the dynamics dictionary available actions. The dynamics dictionary will be generated such that actions leading to barrier states are not included in available actions for that state. The same idea is applied to the edges, there will be no actions that lead off the grid.
+	    \item The dynamics dictionary will be generated based on a given grid size and a list of obstacle coordinates.
 	\end{itemize}
-    \item You would initialize with a random policy where every action that is possible in a state is equally probable. What does this policy look like?
+
+\section{Question 2}
 	\begin{itemize}
 	    \item This policy is best viewed in graphical form \ref{fig:random_policy} where arrows pointing left, right, down, and up indicate which action the agent will take in that state.
 	    \item Note, this is a snapshot of the random policy, and in practice, new actions are randomly selected on every state transition.
@@ -160,9 +163,7 @@
 	  \label{fig:random_policy}
 	\end{figure}
 
-    \item Assume the agent uses a Monte Carlo method to learn an optimal policy starting with the equi-random policy. It involves improving the random policy slowly using a greedy approach and stopping when the policy does not improve anymore. Write the algorithm in terms of pseudocode and briefly explain with reference to lines in the pseudocode.
-
-
+\section{Question 3}
     \begin{algorithm}
     \caption{Optimize Policy with Every-Visit Monte Carlo}
     \begin{algorithmic}[1]
@@ -173,6 +174,7 @@
     \State Initialize policy\_changed to True
     \State Initialize num\_iterations to 0
     \State Initialize actions\_taken to an empty list
+    \State Initialize $\epsilon$ to 1.0
     \While{policy\_changed}
 	\State Update $\epsilon$ with decay
 	\State Generate an episode using current policy
@@ -199,15 +201,16 @@
 
 	\begin{itemize}
 	    \item The pseudocode in \ref{alg:every_visit_mc} is adapted from the every visit Monte Carlo approach \cite{SuttonBartoRLBook}.
-	    \item Policies are compared based on actions taken wih $\epsilon=0$ (line \ref{alg:action_compare}).
+	    \item Policies are compared based on actions taken wih $\epsilon=0$ (line \ref{alg:action_compare}). In this case, the $\epsilon-greedy$ policy will choose the action leading to the higest valued state.
 	    \item The episode is unpacked in reverse to most efficiently calculate $G_t$ (line \ref{alg:reversed_episode}), using a dynamic programming approach to calculate the goodness of each episode.
-	    \item An epsilon decay was added to encourage maximum exploration at the beginning of training, slowly transitioning to more exploitation. Epsilon decays according to \ref{eq:eps_decay}.
+	    \item An epsilon decay was added to encourage maximum exploration at the beginning of training, slowly transitioning to more exploitation. Epsilon begins at 1.0 decays according to \ref{eq:eps_decay}.
 	    \item The value of the goal state is manually set to a high value in \ref{alg:high_value_goal} due to the value function $V(s)$ always assigning 0 to terminal states \cite{Morales2020GrokkingDL}.
+	    \item The state-value function $V(s)$ was used instead of the action-value function $Q(s,a)$ because the dynamics dictionary is available to the agent. To compute the $(argmax(V(s))$, each action is considered, and the policy chooses the action leading the agent to the maximum valued next state. In hindsight, using $Q(s,a)$ would likely have been simpler.
 	\end{itemize}
 
-    \item Implement the algorithm using any programming language of choice. Run the algorithm several times. Does it produce the same policy every time? Show the policy (policies) learned. Explain any differences if any. Change any relevant parameters and rerun a few times. Comment on how changes in parameter values change learning.
+\section{Question 4}
 	\begin{itemize}
-	    \item The generalized policy iteration (GPI) algorithm above was implemented in Python. Because the dynamics of the environment were implemented such that the state transitions were known to the agent, only the value function $V(s)$ was needed for policy improvement. It would also be straightforward to change this to use the action-value function $q(s, a)$ if the state transitions were unknown to the agent.
+	    \item The generalized policy iteration (GPI) algorithm above was implemented in Python. Because the dynamics of the environment were implemented such that the state transitions were known to the agent, only the value function $V(s)$ was needed for policy improvement.
 	    \item Running the algorithm 100,000 times with discount factor $\gamma=0.9$ yeilded two "optimal" policies $\pi_{*1}$ \ref{eq:pi1} (visualized in \ref{fig:pi1}) and $\pi_{*2}$ \ref{eq:pi2} (visualized in \ref{fig:pi2})
 
 	    \begin{equation}
@@ -259,7 +262,7 @@
 	    \end{table}
 	\end{itemize}
 
-    \item Create larger grid structures with randomly placed barriers, with start and goal states located like the original configuration. Repeat the experiments with grid sizes of 10 × 10, 20 × 20, and 30 × 30. Make observations regarding the stability of solutions, the number of episodes needed to stabilize, solution quality, computational complexity, and anything else you find interesting.
+\section{Question 5}
 	\begin{itemize}
 	    \item A Depth First Search approach to maze generation was employed to create larger grid structures \cite{CopeMazeGenerationDFS}.
 	    \item The 10x10 grid was done in a similar way to the 5x5 except the epsilon decay was changed to only decay once all states were visited at least once, and an episode truncation limit was introduced. The episode truncation limit was set to 400 steps for the 10x10 maze. The optimal solution found by every visit MC is shown in \ref{fig:10x10_solution}.
@@ -324,8 +327,7 @@
 	    \end{table}
 	\end{itemize}
 
-    \end{enumerate}
-
+\section{Conclusion}
 
 
 
