@@ -137,16 +137,12 @@
 
 \maketitle
 
-\begin{abstract}
-test
-\end{abstract}
-
 \section{Questions}
 \begin{enumerate}
     \item How would you represent the various components that are required to program this reinforcement learning agent? Discuss each component and how you implement it. Explain how you model the barriers, and how you make sure the agent does not fall off the edges.
 	\begin{itemize}
 	    \item I plan to follow the model given in \cite{Morales2020GrokkingDL} where the dynamics are represented as a nested dictionary in Python. First, the outer dictionary keys will include all the states of the grid environment. Then, an inner dictionary will be the value for each state element containing a key for each action, and a value with a list of all transitions for the state-action pair.
-	    \item The list will contain: the probability of that transition occuring given the state and action (in this case the probabilities are always 1 due to the non-stochastic nature of the problem), the next state (represented as an integer), the reward (all 0 except for the goal state), and a flag to tell whether the next state is terminal.
+	    \item The list will contain: the probability of that transition occurring given the state and action (in this case the probabilities are always 1 due to the non-stochastic nature of the problem), the next state (represented as an integer), the reward (all 0 except for the goal state), and a flag to tell whether the next state is terminal.
 	    \item The barriers will be a property of the dynamics dictionary. The actions that would lead the agent to a barrier state will not be included in the dynamics, making it impossible to transition to those barrier states.
 	    \item The same idea is applied to the edges.
 	    \item Ideally, these dynamics will be automatically generated based on a given grid environment.
@@ -164,7 +160,7 @@ test
 	  \label{fig:random_policy}
 	\end{figure}
 
-    \item Assume the agent uses a Monte Carlo method to learn an optimal policy starting with the equi-random policy. It involves improving the random policy slowly using a greedy approach and stopping when the policy does not improve any more. Write the algorithm in terms of pseudocode and briefly explain with reference to lines in the pseudocode.
+    \item Assume the agent uses a Monte Carlo method to learn an optimal policy starting with the equi-random policy. It involves improving the random policy slowly using a greedy approach and stopping when the policy does not improve anymore. Write the algorithm in terms of pseudocode and briefly explain with reference to lines in the pseudocode.
 
 
     \begin{algorithm}
@@ -172,7 +168,7 @@ test
     \begin{algorithmic}[1]
     \State Initialize policy to $\epsilon$-greedy policy \label{alg:greedy_policy}
     \State Initialize $V(s)$ to 0 for all $s$ in dynamics.keys()
-    \State Set $V(\text{goal\_state})$ to 100
+	\State Set $V(\text{goal\_state})$ to 100 \label{alg:high_value_goal}
     \State Initialize returns to an empty list for all $s$ in dynamics.keys()
     \State Initialize policy\_changed to True
     \State Initialize num\_iterations to 0
@@ -201,51 +197,17 @@ test
       \label{alg:every_visit_mc}
     \end{algorithm}
 
-
-
-
-    % \begin{algorithm}
-    % \caption{Every Visit Monte Carlo Approach for Solving a 5x5 Maze}
-    % \begin{algorithmic}[1] % Numbers each line
-    % \Procedure{generateOptimizedPolicy}{$\gamma$}
-    %     \State $policy \gets RandomPolicy()$
-    %     \State $V(s) \gets 0$ for all $s \in S$
-    %     \State $Returns(s) \gets []$ for all $s \in S$
-    %     \State $PolicyChanged \gets \text{True}$
-    %     \State $previousActions \gets []$
-    %     \State $actionsTaken \gets []$
-    %     \While{$PolicyChanged$}
-    %         \State $Episode \gets GenerateEpisode(policy)$
-    %         \State $G \gets 0$
-    %         \For{$(s, a, r) \in \text{reversed}(Episode)$} \label{alg:reversed_episode}
-    %     	\State $G \gets \gamma \times G + r$
-    %     	\State $Returns(s).append(G)$
-    %     	\State $V(s) \gets \text{Average}(Returns(s))$
-    %     	\State $actionsTaken.append(a)$
-    %         \EndFor
-    %         \State $OldPolicy \gets policy$
-    %         \State $policy \gets GreedyPolicy(V)$ \label{alg:greedy_policy}
-    %         \If{$actionsTaken == previousActions$} \label{alg:action_compare}
-    %     	\State $PolicyChanged \gets \text{False}$
-    %         \EndIf
-    %         \State $previousActions \gets actionsTaken$
-    %     \EndWhile
-    %     \State \textbf{return} $policy$
-    % \EndProcedure
-    % \end{algorithmic}
-    %     \label{alg:every_visit_mc}
-    % \end{algorithm}
-
 	\begin{itemize}
 	    \item The pseudocode in \ref{alg:every_visit_mc} is adapted from the every visit Monte Carlo approach \cite{SuttonBartoRLBook}.
 	    \item Policies are compared based on actions taken wih $\epsilon=0$ (line \ref{alg:action_compare}).
 	    \item The episode is unpacked in reverse to most efficiently calculate $G_t$ (line \ref{alg:reversed_episode}), using a dynamic programming approach to calculate the goodness of each episode.
-	    \item An epsilon decay was added to encourage maximum exploration at the begining of training, slowly transitioning to more exploitation. Epsilon decays according to \ref{eq:eps_decay}.
+	    \item An epsilon decay was added to encourage maximum exploration at the beginning of training, slowly transitioning to more exploitation. Epsilon decays according to \ref{eq:eps_decay}.
+	    \item The value of the goal state is manually set to a high value in \ref{alg:high_value_goal} due to the value function $V(s)$ always assigning 0 to terminal states \cite{Morales2020GrokkingDL}.
 	\end{itemize}
 
-    \item Implement the algorithm using any programming language of choice. Run the algorithm several times. Does it produce the same policy every time? Show the policy (policies) learned. Explain any differences if any. Change any relevant parameters and rerun a few times. Comment on how changes in parameter values changes learning.
+    \item Implement the algorithm using any programming language of choice. Run the algorithm several times. Does it produce the same policy every time? Show the policy (policies) learned. Explain any differences if any. Change any relevant parameters and rerun a few times. Comment on how changes in parameter values change learning.
 	\begin{itemize}
-	    \item The generalized policy iteration (GPI) algorithm above was implemented in Python. Because the dynamics of the environment were implemented such that the state transitions were known to the agent, only the value function $V(s)$ was needed for policy improvement. It would also be straightforward to change this to use the action-value function $q(s,a)$ if the state transitions were unknown to the agent.
+	    \item The generalized policy iteration (GPI) algorithm above was implemented in Python. Because the dynamics of the environment were implemented such that the state transitions were known to the agent, only the value function $V(s)$ was needed for policy improvement. It would also be straightforward to change this to use the action-value function $q(s, a)$ if the state transitions were unknown to the agent.
 	    \item Running the algorithm 100,000 times with discount factor $\gamma=0.9$ yeilded two "optimal" policies $\pi_{*1}$ \ref{eq:pi1} (visualized in \ref{fig:pi1}) and $\pi_{*2}$ \ref{eq:pi2} (visualized in \ref{fig:pi2})
 
 	    \begin{equation}
@@ -268,7 +230,7 @@ test
 	    \end{figure}
 
 	    \begin{gather}
-		\pi_{*2} = \{D,D,D,R,R,R,D,R\} \\
+		\pi_{*2} = \{D,D,D,R,R,R,D,R\}
 	    \label{eq:pi2}
 	    \end{gather}
 
@@ -295,8 +257,73 @@ test
 	    1.0   & 26.407             & 16.867    \\ \hline
 	    \end{tabular}
 	    \end{table}
-
 	\end{itemize}
+
+    \item Create larger grid structures with randomly placed barriers, with start and goal states located like the original configuration. Repeat the experiments with grid sizes of 10 × 10, 20 × 20, and 30 × 30. Make observations regarding the stability of solutions, the number of episodes needed to stabilize, solution quality, computational complexity, and anything else you find interesting.
+	\begin{itemize}
+	    \item A Depth First Search approach to maze generation was employed to create larger grid structures \cite{CopeMazeGenerationDFS}.
+	    \item The 10x10 grid was done in a similar way to the 5x5 except the epsilon decay was changed to only decay once all states were visited at least once, and an episode truncation limit was introduced. The episode truncation limit was set to 400 steps for the 10x10 maze. The optimal solution found by every visit MC is shown in \ref{fig:10x10_solution}.
+	    \item The path in red indicates the last path the agent took before convergence was declared.
+
+	    \begin{figure}[htbp]
+	      \centering
+	      \includegraphics[width=0.5\linewidth]{10x10.jpg}
+		\caption{10 x 10 Maze with Optimal Policy and State Value Function}
+	      \label{fig:10x10_solution}
+	    \end{figure}
+
+	    \item For the 20x20 grid, $\gamma < 0.9$ resulted in $G_t$ calculations that exceeded the lower limit of 64-bit precision in Python. Thus, $\gamma$ was increased to $0.99$ for the remainder of the experiments.
+
+	    \begin{figure}[htbp]
+	      \centering
+	      \includegraphics[width=0.5\linewidth]{20x20.jpg}
+		\caption{20 x 20 Maze}
+	      \label{fig:20x20_solution}
+	    \end{figure}
+
+	    \item The 30x30 grid required the implementation of episode truncation to complete it in a reasonable amount of time. An adaptable truncation limit was introduced starting at a 1000-step limit and increasing if an episode was truncated. Truncated episodes were not evaluated for policy evaluation since the goodness of the episode would always be 0 (the agent never made it to the goal state).
+
+	    \begin{figure}[htbp]
+	      \centering
+	      \includegraphics[width=0.5\linewidth]{30x30.jpg}
+		\caption{30 x 30 Maze}
+	      \label{fig:30x30_solution}
+	    \end{figure}
+
+	    \item To test the employed algorithm further, 40x40 grids were also explored. 
+
+	    \begin{figure}[htbp]
+	      \centering
+	      \includegraphics[width=0.5\linewidth]{40x40.jpg}
+		\caption{40 x 40 Maze}
+	      \label{fig:40x40_solution}
+	    \end{figure}
+
+	    % \begin{figure}[htbp]
+	    %   \centering
+	    %   \includegraphics[width=0.5\linewidth]{100x100.jpg}
+	    %     \caption{100 x 100 Maze}
+	    %   \label{fig:100x100_solution}
+	    % \end{figure}
+
+
+	\item Number of episodes required to stabilize are summarized in table \ref{tab:num_episodes}. Unlike the 5x5 maze, the mean and standard deviation were not computed in the interest of time.
+
+	    \begin{table}[htbp]
+	    \caption{Monte Carlo Mazes}
+	    \label{tab:num_episodes}
+	    \centering
+	    \begin{tabular}{|c|c|c|c|}
+	    \hline
+		Maze    &  N. Episodes & N. Episode Steps & Optimal G       \\ \hline
+		10x10   & 88        & 18                  & 0.983   \\ \hline
+		20x20   & 109       & 52                  & 0.950   \\ \hline
+		30x30   & 116       & 150                 & 0.862   \\ \hline
+		% 40x40   & 208    \\ \hline
+	    \end{tabular}
+	    \end{table}
+	\end{itemize}
+
     \end{enumerate}
 
 
