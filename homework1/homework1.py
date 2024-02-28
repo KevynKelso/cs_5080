@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+import math
 from collections.abc import Callable
 import random
 from tqdm import tqdm
@@ -202,45 +204,51 @@ def eps_greedy_explore_policy(state: tuple, p: dict, value_func: dict, eps: floa
 
 def optimize_policy_every_visit_mc(dynamics, gamma, debug=False):
     eps = 1.0
-    eps_decay_num = 1
-    eps_decay_rate = -0.05
+    eps_decay_rate = 0.007
     previous_goodness = 0
     policy = eps_greedy_explore_policy
     value_func = {s: 0 for s in dynamics.keys() if s not in obstacles}
+    best_value_fn = {s: 0 for s in dynamics.keys() if s not in obstacles}
     state_count = {s: 0 for s in dynamics.keys() if s not in obstacles}
     value_func[goal_state] = 100
     policy_changed = True
     num_iterations = 0
     truncated = False
-    truncation_limit = 1000
+    truncation_step = 1000
+    truncation_limit = truncation_step
     exploration_complete = False
     episode = tuple()
     max_goodness = 0
     goodness = 0
+
+    epsilon_plot = []
+    goodness_plot = []
+    diff_plot = []
+
     while policy_changed:
-        print(f"eps = {eps}")
         episode, truncated = generate_episode(policy, dynamics, value_func, eps, truncation_limit)
         if truncated:
             print("episode truncated")
-            truncation_limit += 1000
-            eps = 2**(eps_decay_rate*eps_decay_num)
-            if eps_decay_num > 0:
-                eps_decay_num -= 1
-            continue
+            truncation_limit += truncation_step
 
+        old_values = [v for v in value_func.values()]
+        old_value_fn = value_func
         goodness = 0
         for s, _, r in reversed(episode):
             goodness = (gamma * goodness) + r
             state_count[s] += 1
             value_func[s] = (value_func[s] + goodness) / state_count[s]
 
-        if goodness == 2.5e-323 and truncation_limit > 2000:
-            truncation_limit -= 1000
+        if goodness == 2.5e-323 and truncation_limit > truncation_step * 2:
+            truncation_limit -= truncation_step
         if goodness > max_goodness:
             max_goodness = goodness
+            best_value_fn = old_value_fn
 
-        print(f"truncation_limit = {truncation_limit}")
+        new_values = [v for v in value_func.values()]
+        diff = math.sqrt(np.abs(np.mean(np.subtract(old_values, new_values))))
         print(f"episode complete in {len(episode)} steps, G={goodness}")
+
         if debug:
             screen.fill(WHITE)
             draw_maze(
@@ -257,27 +265,31 @@ def optimize_policy_every_visit_mc(dynamics, gamma, debug=False):
                 path=tuple(e[0] for e in episode)
             )
             pygame.display.update()
+            for v in value_func.values():
+                if v == 2.5e-323:
+                    raise OverflowError("Increase max reward or gamma")
 
         if exploration_complete == False:
             for state in dynamics.keys():
                 if state in obstacles:
                     continue
-                if value_func[state] == 2.5e-323:
-                    raise OverflowError("Increase max reward or gamma")
                 if value_func[state] == 0:
                     break
             else:
                 exploration_complete = True
-                eps = 0.05
 
         if goodness > 2.5e-323 and exploration_complete:
-            eps = 2**(eps_decay_rate*eps_decay_num)
-            eps_decay_num += 1
+            eps *= (1 - eps_decay_rate)
 
         num_iterations += 1
+        epsilon_plot.append(eps)
+        goodness_plot.append(goodness)
+        diff_plot.append(diff)
 
-        if goodness > 2.5e-5 and goodness == previous_goodness:
+        if len(diff_plot) > 100 and np.mean(diff_plot[-100:]) < 0.001:
             policy_changed = False
+        # if  goodness > 2.5e-5 and goodness == previous_goodness:
+        #     policy_changed = False
             #with open("optimal-actions.csv", "a") as f:
             #    f.write(
             #        ",".join(map(str, reversed(actions_taken)))
@@ -293,7 +305,7 @@ def optimize_policy_every_visit_mc(dynamics, gamma, debug=False):
         goal_state,
         grid_size,
         obstacles,
-        policy=lambda s: policy(s, dynamics, value_func, 0.0),
+        policy=lambda s: policy(s, dynamics, best_value_fn, 0.0),
         dynamics=dynamics,
         show_policy=True,
         value_func=value_func,
@@ -301,8 +313,25 @@ def optimize_policy_every_visit_mc(dynamics, gamma, debug=False):
     )
     pygame.display.update()
 
-    if goodness < max_goodness:
-        raise TypeError(f"Did not converge, goodness = {goodness}, but max_goodness = {max_goodness}")
+    ax1 = plt.subplot(311)
+    plt.plot(goodness_plot)
+    plt.tick_params('x', labelsize=6)
+    ax1.set_ylabel("Goodness")
+    plt.title("Training Metrics")
+
+    ax2 = plt.subplot(312, sharex=ax1)
+    plt.plot(diff_plot)
+    plt.tick_params('x', labelbottom=False)
+    ax2.set_ylabel("Root Mean V(s) diff")
+
+    ax3 = plt.subplot(313, sharex=ax1)
+    plt.plot(epsilon_plot)
+    ax3.set_ylabel("Epsilon")
+    plt.xlabel("Episode Number")
+
+    plt.show()
+
+    print(f"best goodness {max_goodness}")
 
     pygame.image.save(screen, f"output/{num_iterations}.jpg")
     print(f"convergence in {num_iterations} iterations")
@@ -312,11 +341,11 @@ def optimize_policy_every_visit_mc(dynamics, gamma, debug=False):
 def main():
     global screen, cell_size, start_state, goal_state, grid_size, obstacles
     sys.setrecursionlimit(10000)
-    grid_size = (40, 40)
+    grid_size = (100, 100)
     obstacles = generate_maze(grid_size[0] // 2)
     start_state = (0,0)
     goal_state = (grid_size[0]-1, grid_size[1]-1)
-    cell_size = int(-0.01 * (5 - grid_size[0]) ** 2 + 50)
+    cell_size = int(-(grid_size[0]/1000) * (5 - grid_size[0]) ** 2 + 50)
     if cell_size < 0:
         cell_size = 10
     screen_size = (cell_size * grid_size[0], cell_size * grid_size[1])
@@ -341,22 +370,25 @@ def main():
     # optimal_polices = df[df.columns[:-1]]
     # print(optimal_polices.drop_duplicates())
 
-    # screen.fill(WHITE)
-    # draw_maze(
-    #     screen,
-    #     cell_size,
-    #     start_state,
-    #     goal_state,
-    #     grid_size,
-    #     obstacles,
-    #     policy=random_policy,
-    #     dynamics=None,
-    #     show_policy=False,
-    #     value_func=None,
-    # )
-    # pygame.display.update()
+    screen.fill(WHITE)
+    draw_maze(
+        screen,
+        cell_size,
+        start_state,
+        goal_state,
+        grid_size,
+        obstacles,
+        policy=random_policy,
+        dynamics=None,
+        show_policy=False,
+        value_func=None,
+    )
+    pygame.display.update()
 
-    value_func = optimize_policy_every_visit_mc(p, 0.999, debug=False)
+    try:
+        value_func = optimize_policy_every_visit_mc(p, 0.999999, debug=False)
+    except TypeError as e:
+        print(e)
 
     running = True
     while running:
