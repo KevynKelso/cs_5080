@@ -69,17 +69,17 @@ def draw_maze(screen, cell_size, start_state, goal_state, grid_size, obstacles, 
             pygame.draw.rect(screen, WHITE, rect, 1)
             if (col, row) in obstacles:
                 pygame.draw.rect(screen, OBSTACLE_COLOR, rect)
-                continue
             if show_policy:
                 try:
                     direction = policy((col, row))
                     color = None
-                    if path and (col,row) in path:
+                    if path and (col,row) in path.keys():
                         color = (255,0,0)
+                        direction = path[(col,row)]
                     draw_arrow(screen, rect, direction, color)
                 except TypeError:
                     pass
-            if value_func and (col, row) not in obstacles:
+            if value_func:
                 val = font.render(str(round(value_func[(col, row)], 2)), True, BLACK)
                 screen.blit(val, rect)
 

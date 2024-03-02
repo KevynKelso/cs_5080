@@ -23,8 +23,8 @@ start_state = None
 goal_state = None
 grid_size = None
 obstacles = None
-max_reward = 1
-
+max_reward = 100
+obstacle_reward = -1000
 
 def generate_dynamics(
     grid_size: tuple, goal_state: tuple, obstacles: list[tuple]
@@ -36,7 +36,7 @@ def generate_dynamics(
             p_inner = dict()
             # left action OK
             next_state = (col - 1, row)
-            if next_state not in obstacles and col - 1 >= 0:
+            if col - 1 >= 0:
                 p_inner[LEFT] = [
                     1.0,
                     next_state,
@@ -44,7 +44,7 @@ def generate_dynamics(
                 ]
             # right action OK
             next_state = (col + 1, row)
-            if next_state not in obstacles and col + 1 < grid_size[0]:
+            if col + 1 < grid_size[0]:
                 p_inner[RIGHT] = [
                     1.0,
                     next_state,
@@ -52,7 +52,7 @@ def generate_dynamics(
                 ]
             # up action OK
             next_state = (col, row - 1)
-            if next_state not in obstacles and row - 1 >= 0:
+            if row - 1 >= 0:
                 p_inner[UP] = [
                     1.0,
                     next_state,
@@ -60,7 +60,7 @@ def generate_dynamics(
                 ]
             # down action OK
             next_state = (col, row + 1)
-            if next_state not in obstacles and row + 1 < grid_size[1]:
+            if row + 1 < grid_size[1]:
                 p_inner[DOWN] = [
                     1.0,
                     next_state,
@@ -69,6 +69,15 @@ def generate_dynamics(
 
             if (col, row) == goal_state:
                 p_inner = dict()
+
+            reward = 0
+            if (col, row) in obstacles:
+                reward = obstacle_reward
+
+            if (col, row) == goal_state:
+                reward = max_reward
+
+            p_inner["reward"] = reward
 
             p[(col, row)] = p_inner
             state += 1
@@ -124,10 +133,12 @@ def generate_episode(policy, dynamics, value_func, eps, truncation_limit=100):
     state = start_state
     prev_state = start_state
     count = 0
+    visited_states = []
     while not terminated:
-        action = policy(state, dynamics, value_func, eps, prev_state)
+        visited_states.append(state)
+        action = policy(state, dynamics, value_func, eps, prev_state, visited_states)
         next_state = dynamics[state][action][1]
-        reward = max_reward if next_state == goal_state else 0
+        reward = dynamics[state]["reward"]
         episode.append((state, action, reward))
         terminated = dynamics[state][action][2]
         prev_state = state
@@ -162,37 +173,39 @@ def eps_greedy_policy(state: tuple, p: dict, value_func: dict, eps: float):
     else:
         return exploit_act
 
-def eps_greedy_explore_policy(state: tuple, p: dict, value_func: dict, eps: float, prev_state=None):
-    available_actions = list(p[state].keys())
+def eps_greedy_explore_policy(state: tuple, p: dict, value_func: dict, eps: float, prev_state=None, visited_states=[]):
+    available_actions = list(p[state].keys())[:-1]
     if not len(available_actions):
         raise TypeError(f"No available actions to choose from in state {state}")
 
     if len(available_actions) == 1:
         return available_actions[0]
 
-    if len(available_actions) == 2 and prev_state:
-        if p[state][available_actions[0]][1] == prev_state:
-            return available_actions[1]
-        elif p[state][available_actions[1]][1] == prev_state:
-            return available_actions[0]
+    # if len(available_actions) == 2 and prev_state:
+    #     if p[state][available_actions[0]][1] == prev_state:
+    #         return available_actions[1]
+    #     elif p[state][available_actions[1]][1] == prev_state:
+    #         return available_actions[0]
 
     rand = random.random()
 
     # exploitation action
     exploit_act = random.choice(available_actions)
-    max_value = 0
-    actions_not_visited = []
+    max_value = -9999999999
+    # actions_not_visited = []
     for act in available_actions:
         next_state = p[state][act][1]
+        if next_state in visited_states:
+            continue
         if value_func[next_state] > max_value:
             max_value = value_func[next_state]
             exploit_act = act
         # if we haven't visited this state before
-        if value_func[next_state] == 0:
-            actions_not_visited.append(act)
+        # if value_func[next_state] == 0:
+        #     actions_not_visited.append(act)
 
-    if eps == 1.0 and len(actions_not_visited) and rand < 0.5:
-        return random.choice(actions_not_visited)
+    # if eps == 1.0 and len(actions_not_visited) and rand < 0.5:
+    #     return random.choice(actions_not_visited)
 
     # exploration action
     if rand < eps:
@@ -204,17 +217,17 @@ def eps_greedy_explore_policy(state: tuple, p: dict, value_func: dict, eps: floa
 
 def optimize_policy_every_visit_mc(dynamics, gamma, debug=False):
     eps = 1.0
-    eps_decay_rate = 0.007
+    eps_decay_rate = 0.001
     previous_goodness = 0
     policy = eps_greedy_explore_policy
-    value_func = {s: 0 for s in dynamics.keys() if s not in obstacles}
-    best_value_fn = {s: 0 for s in dynamics.keys() if s not in obstacles}
-    state_count = {s: 0 for s in dynamics.keys() if s not in obstacles}
+    value_func = {s: 0 for s in dynamics.keys()}
+    best_value_fn = {s: 0 for s in dynamics.keys()}
+    state_count = {s: 0 for s in dynamics.keys()}
     value_func[goal_state] = 100
     policy_changed = True
     num_iterations = 0
     truncated = False
-    truncation_step = 1000
+    truncation_step = 20000
     truncation_limit = truncation_step
     exploration_complete = False
     episode = tuple()
@@ -228,8 +241,9 @@ def optimize_policy_every_visit_mc(dynamics, gamma, debug=False):
     while policy_changed:
         episode, truncated = generate_episode(policy, dynamics, value_func, eps, truncation_limit)
         if truncated:
-            print("episode truncated")
-            truncation_limit += truncation_step
+            # print("episode truncated")
+            # truncation_limit += truncation_step
+            continue
 
         old_values = [v for v in value_func.values()]
         old_value_fn = value_func
@@ -239,15 +253,15 @@ def optimize_policy_every_visit_mc(dynamics, gamma, debug=False):
             state_count[s] += 1
             value_func[s] = (value_func[s] + goodness) / state_count[s]
 
-        if goodness == 2.5e-323 and truncation_limit > truncation_step * 2:
-            truncation_limit -= truncation_step
+        # if goodness == 2.5e-323 and truncation_limit > truncation_step * 2:
+        #     truncation_limit -= truncation_step
         if goodness > max_goodness:
             max_goodness = goodness
             best_value_fn = old_value_fn
 
         new_values = [v for v in value_func.values()]
         diff = math.sqrt(np.abs(np.mean(np.subtract(old_values, new_values))))
-        print(f"episode complete in {len(episode)} steps, G={goodness}")
+        print(f"episode {num_iterations} complete in {len(episode)} steps, G={goodness}, e={eps}")
 
         if debug:
             screen.fill(WHITE)
@@ -271,14 +285,12 @@ def optimize_policy_every_visit_mc(dynamics, gamma, debug=False):
 
         if exploration_complete == False:
             for state in dynamics.keys():
-                if state in obstacles:
-                    continue
                 if value_func[state] == 0:
                     break
             else:
                 exploration_complete = True
 
-        if goodness > 2.5e-323 and exploration_complete:
+        if exploration_complete:
             eps *= (1 - eps_decay_rate)
 
         num_iterations += 1
@@ -286,7 +298,7 @@ def optimize_policy_every_visit_mc(dynamics, gamma, debug=False):
         goodness_plot.append(goodness)
         diff_plot.append(diff)
 
-        if len(diff_plot) > 100 and np.mean(diff_plot[-100:]) < 0.001:
+        if len(diff_plot) > 50 and np.mean(diff_plot[-50:]) < 0.009:
             policy_changed = False
         # if  goodness > 2.5e-5 and goodness == previous_goodness:
         #     policy_changed = False
@@ -298,6 +310,8 @@ def optimize_policy_every_visit_mc(dynamics, gamma, debug=False):
         previous_goodness = goodness
 
     screen.fill(WHITE)
+    path = {e[0]: e[1] for e in episode}
+    print(path)
     draw_maze(
         screen,
         cell_size,
@@ -305,11 +319,11 @@ def optimize_policy_every_visit_mc(dynamics, gamma, debug=False):
         goal_state,
         grid_size,
         obstacles,
-        policy=lambda s: policy(s, dynamics, best_value_fn, 0.0),
+        policy=lambda s: policy(s, dynamics, value_func, 0.0),
         dynamics=dynamics,
         show_policy=True,
         value_func=value_func,
-        path=tuple(e[0] for e in episode)
+        path=path
     )
     pygame.display.update()
 
@@ -341,7 +355,7 @@ def optimize_policy_every_visit_mc(dynamics, gamma, debug=False):
 def main():
     global screen, cell_size, start_state, goal_state, grid_size, obstacles
     sys.setrecursionlimit(10000)
-    grid_size = (100, 100)
+    grid_size = (30, 30)
     obstacles = generate_maze(grid_size[0] // 2)
     start_state = (0,0)
     goal_state = (grid_size[0]-1, grid_size[1]-1)
@@ -357,9 +371,9 @@ def main():
     # goal_state = (4, 4)
 
     p = generate_dynamics(grid_size, goal_state, obstacles)
-    validate_dynamics(obstacles, p, grid_size)
+    # validate_dynamics(obstacles, p, grid_size)
     pp = PrettyPrinter(indent=2)
-    # pp.pprint(p)
+    pp.pprint(p)
 
     # for _ in tqdm(range(5000)):
     #     value_func = optimize_policy_every_visit_mc(p)
@@ -385,10 +399,8 @@ def main():
     )
     pygame.display.update()
 
-    try:
-        value_func = optimize_policy_every_visit_mc(p, 0.999999, debug=False)
-    except TypeError as e:
-        print(e)
+    value_func = optimize_policy_every_visit_mc(p, 0.9, debug=False)
+    print(value_func)
 
     running = True
     while running:
