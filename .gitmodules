@@ -1,3 +1,6 @@
 [submodule "sumo-rl"]
 	path = sumo-rl
 	url = git@github.com:LucasAlegre/sumo-rl.git
+[submodule "StateStreetSumo"]
+	path = StateStreetSumo
+	url = git@github.com:jault/StateStreetSumo.git
