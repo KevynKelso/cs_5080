@@ -38,38 +38,11 @@
 \end{frame}
 
 \begin{frame}[bg=arguelles.png]
-      \frametitle{Problem Introduction}
+      \frametitle{MDP Problem Introduction}
       \begin{itemize}
-      \item 12-55\% of total commute time is caused by signalized intersections \cite{ault2021reinforcement}.
-      \item RL approaches suggest a 73\% decrease in that time by efficiently controlling traffic signals \cite{ault2021reinforcement}.
-      \item This project aims to reproduce and improve upon existing RL methods.
-      \end{itemize}
-      % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
-\end{frame}
-
-
-\Section{MDP}
-
-\begin{frame}[bg=arguelles.png]
-      \frametitle{Problem Formulation}
-      \begin{itemize}
-      \item Traffic Signal Control (TSC) is a Partially Observable Markov Decision Process (POMDP), meaning the agent does not have a full picture of the state\cite{Almeida2022MultiagentRL} \cite{DBLP:journals/corr/abs-2004-04778} \cite{choi1999environment}.
-      \item Multiagent approaches introduce non-stationary dynamics meaning the state transition and reward probabilities are not static\cite{choi1999environment} \cite{10.3389/frai.2022.805823}.
-      \item State aliasing occurs in POMDPs where the agent finds two states that are different to be the same, resulting in inappropriate actions. 
-      \item Centralized approaches have the curse of dimensionality or require unfeasible infrastructure\cite{DBLP:journals/corr/abs-2004-04778} \cite{ault2021reinforcement}.
-      \end{itemize}
-      % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
-\end{frame}
-
-\begin{frame}[bg=arguelles.png]
-      \frametitle{State Space}
-      \begin{itemize}
-        \item Modeled as vector in \ref{eq:state_space}\cite{Almeida2022MultiagentRL}.
-      \item Each time step \(t\) corresponds to five seconds of actual traffic dynamics.
-      \item \(\rho_1\) and \(\rho_2\) are binary variables \(\rho_1, \rho_2 \in \{0, 1\}\) indicating the state of the intersection lights.
-      \item \(g\) indicates if the light has been green for the minimum specified time.
-      \item \(L\) is the list of all lanes with density \(\Delta_l\) which is the number of vehicles in each lane divided by the capacity of that lane.
-      \item \(q_l\) is the number of queued vehicles in each lane \(l \in L\).
+      \item Signalized intersections contribute to 12-55\% of commute time, with RL methods potentially reducing this by 73\%, guiding this project's aim to enhance RL traffic control strategies \cite{ault2021reinforcement}.
+      \item TSC as a POMDP involves partial state visibility and non-stationary dynamics, leading to state aliasing and challenges in centralized approaches due to dimensionality and infrastructure demands\cite{Almeida2022MultiagentRL} \cite{DBLP:journals/corr/abs-2004-04778} \cite{choi1999environment}\cite{choi1999environment} \cite{10.3389/frai.2022.805823}\cite{DBLP:journals/corr/abs-2004-04778} \cite{ault2021reinforcement}.
+      \item State Space modeled in \ref{eq:state_space}. \(\rho\) are intersection state variables, \(\Delta_l\) are lane density variables, and \(l \in L\) is No. queued vehicles for each lane.
       \end{itemize}
       % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
 
@@ -80,8 +53,11 @@ s_t = [\rho_1, \rho_2, g, \Delta_1, \ldots, \Delta_L, q_1, \ldots, q_L]
 
 \end{frame}
 
+
+\Section{MDP}
+
 \begin{frame}[bg=arguelles.png]
-      \frametitle{Action Space}
+      \frametitle{MDP Problem Introduction}
       \begin{itemize}
       \item Agent can select an action to put the intersection into one of four modes \(a_t \in \{a_1, a_2, a_3, a_4\}\).
       \item To change the intersection into a different mode, a mandatory yellow phase $\phi$ precedes the mode change.
@@ -177,7 +153,7 @@ s_t = [\rho_1, \rho_2, g, \Delta_1, \ldots, \Delta_L, q_1, \ldots, q_L]
 \end{frame}
 
 \begin{frame}[bg=arguelles.png]
-      \frametitle{Chosen Method}
+      \frametitle{Experimental Methodology}
       \begin{itemize}
       \item IDQN is the chosen approach to solve the TSC problem.
       \item IDQN is an off-policy, model-free RL method incorporating the idea of collecting experience tuples as the agent plays episodes\cite{DBLP:journals/corr/MnihKSGAWR13}.
@@ -189,27 +165,13 @@ s_t = [\rho_1, \rho_2, g, \Delta_1, \ldots, \Delta_L, q_1, \ldots, q_L]
       % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
 \end{frame}
 
-\begin{frame}[bg=arguelles.png]
-      \frametitle{Performance Metrics}
-      \begin{itemize}
-      \item REinforced Signal COntrol (RESCO) is a testbed and benchmark environment to help judge the performance of RL-based algorithms for TSC\cite{ault2021reinforcement}.
-      \item Total wait time for each vehicle.
-      \item Average delay per vehicle.
-      \item Average number of stops per vehicle.
-      \item Average queue length.
-      \item Average trip time\cite{Reza2023}.
-      \end{itemize}
-      % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
-\end{frame}
-
 \Section{Conclusion}
-
 \begin{frame}[bg=arguelles.png]
-      \frametitle{Expected Challenges}
+      \frametitle{Challenges Faced}
       \begin{itemize}
-      \item The non-stationary nature of multiagent RL problems is known to cause divergence problems due to the constantly changing dynamics.
-      \item This can be somewhat mitigated by applying a scenario that is consistent across training, but the dynamics will still be changing due to the other agents' learning\cite{DBLP:journals/corr/abs-2004-04778}.
-      \item Introducing context switches by changing the scenario, for example, making vehicles flow in waves to simulate rush hour is critical to designing a robust traffic system but will be out of the scope of the initial research goals.
+      \item Non-stationary dynamics in multiagent 4x4 grid increase complexity compared to single-agent environments.
+      \item Fully connected IDQN agents underperformed in 4x4 grid, leading to exclusive use of convolutional IDQN agents.
+      \item Utilized research projects for project bootstrap \footnote{https://github.com/LucasAlegre/sumo-rl} \footnote{https://github.com/jault/StateStreetSumo}, requiring debugging and extension for TensorFlow 2.x compatibility and additional feature integration.
       \end{itemize}
       % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
 \end{frame}
@@ -217,21 +179,22 @@ s_t = [\rho_1, \rho_2, g, \Delta_1, \ldots, \Delta_L, q_1, \ldots, q_L]
 \begin{frame}[bg=arguelles.png]
       \frametitle{Timeline}
 
-    \begin{table}[H]
-    \centering
-    \begin{tabular}{ll}
-    \hline
-    \textbf{Date} & \textbf{Milestone}             \\ \hline
-    2/19 & 4x4 grid environment setup and working  \\
-    2/26 & IDQN agents learning                    \\
-    3/4  & Perform experiments and generate data   \\
-    3/18 & Injected uncertainty scenarios          \\
-    4/1  & Data compilation and writing            \\ \hline
-    \end{tabular}
-    \caption{Project Timeline}
-    \label{tab:project_timeline}
-    \end{table}
-
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\hline
+\textbf{Done} & \textbf{Date} & \textbf{Milestone}             \\ \hline
+\checkmark & 2/19 & 4x4 grid environment setup and working  \\
+\checkmark & 2/26 & IDQN agents learning                    \\
+\checkmark & 3/4  & Perform experiments and generate data   \\
+& 3/18 & Injected uncertainty scenarios          \\
+& 3/24 & Binary DQN experiments                  \\
+& 4/1 & Double DQN and other misc experiments  \\
+& 4/15 & Data compilation and writing            \\ \hline
+\end{tabular}
+\caption{Project Timeline}
+\label{tab:project_timeline}
+\end{table}
       % \texttt{\textbackslash frame[plain,bg=demo-background.jpg]\{\textbackslash titlepage\}}
 \end{frame}
 
