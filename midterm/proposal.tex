@@ -267,21 +267,22 @@ It is riddled with logistical challenges extending beyond pollution and traffic 
 The idea of applying reinforcement learning to transportation problems is not new but has great potential for improvement and research in the field.
 Contrary to the fixed algorithms currently deployed in most areas \cite{Chaudhuri2021}, reinforcement learning can make decisions in stochastic and uncertain environments characteristic of traffic problems.
 Many common reinforcement learning approaches have been applied, showing promise over other approaches, and will be compared below.
-This project aims to not only reproduce existing methods, but apply new ideas to improve performance concerning traffic throughput metrics described below.
+This project aims to not only reproduce existing methods but also apply new ideas to improve performance concerning traffic throughput metrics described below.
 An integration of various ideas from the literature, combined to study what can be learned from reinforcement learning experimentation with regards to traffic control is the primary purpose.
 \end{abstract}
 
 \section{Introduction}
 Traffic Signal Control (TSC), a classic control problem affecting all drivers, holds exciting potential for reinforcement learning to address obvious societal problems including air pollution, decreases in speed, delays, and opportunity costs \cite{Almeida2022MultiagentRL}.
 Based on travel research conducted in urban areas, 12-55\% of total commute time is caused by signalized intersections (traffic lights) \cite{ault2021reinforcement}.
-Moreover, modern reinforcement learning (RL) approaches suggest a potential 73\% reduction in that time compared to traditional approaches currently deployed \cite{ault2021reinforcement}.
+Moreover, modern reinforcement learning (RL) approaches suggest a potential 73\% reduction in imposed delays compared to traditional approaches currently deployed \cite{ault2021reinforcement}.
 Discussions on traffic signal control contain many ideas to increase traffic efficiency in both the fixed algorithm and RL space.
 However, many advanced solutions come with expensive caveats. For instance, installing advanced sensors, reworking road paths, or replacing traffic lights with roundabouts \cite{DBLP:journals/corr/abs-2004-04778}.
 This project aims to study reinforcement learning approaches to TSC that can be deployed to existing metropolitan areas with minimal cost and infrastructure changes.
 In this paper, we will discuss the TSC problem in terms of the Markov Decision Process (MDP) paradigm; and how it is formally described.
 Existing methods will then be explored including what is deployed traditionally in most urban environments, and what RL methods could also be used.
 Then, our unique solution will be proposed based on information collected comparing a wide variety of methods used previously on the TSC problem \cite{hafiz2020deep} \cite{ault2021reinforcement} \cite{Ghanadbashi2023}.
-Finally, a discussion of evaluation metrics, expected challenges, and the timeline of the project will be discussed.
+Results will be discussed regarding the current status of the project showcasing what has been done thus far.
+Finally, a discussion of evaluation metrics, challenges overcome, and the timeline of the project will be discussed.
 
 \section{Problem Formulation}
 Multiagent approaches to TSC are Partially Observable Markov Decision Processes (POMDPs) with non-stationary dynamics, placing them in one of the most difficult classes of problems for RL to solve \cite{Almeida2022MultiagentRL} \cite{DBLP:journals/corr/abs-2004-04778} \cite{choi1999environment}.
@@ -302,12 +303,12 @@ s_t = [\rho_1, \rho_2, g, \Delta_1, \ldots, \Delta_L, q_1, \ldots, q_L]
 In reality, few intersections contain the sensors needed to make up the state space described in~\ref{eq:state_space}, so it will be interesting to explore how state space restriction affects agent performance.
 
 \subsection{Action space}
-The action space is best described in figure \ref{fig:action_space} where the green paths indicate where traffic can flow and the red paths are not allowed.
-The agent can change the intersection into one of four modes \(a_t \in \{a_1, a_2, a_3, a_4\} where a_1 = Traffic flows North, South, and right turns\).
+The action space is best described in figure \ref{fig:action_space} where the green paths indicate where traffic can flow and the red paths indicate no traffic flow.
+The agent can change the intersection into one of four modes \(a_t \in \{a_1, a_2, a_3, a_4\}\) where \(a_1\) = Traffic flows North, South, and right turns.
 There are two direct flow modes and two turning modes.
 In the direct flow modes North to South and East to West, the vehicles are also permitted to take right turns.
 To change the intersection into a different mode, a mandatory yellow phase $\phi$ precedes the mode change.
-In most simulation scenarios, $\phi$ = 2 seconds.
+In most simulation scenarios, (including this project) $\phi$ = 2 seconds.
 
 \begin{figure}[htbp]
   \centering
@@ -320,9 +321,10 @@ In most simulation scenarios, $\phi$ = 2 seconds.
 In most papers, the cumulative delay reward function \ref{eq:cumulative_delay} is used where \(D_t\) is the sum of all vehicles wait time \ref{eq:wait_time_sum}.
 Other papers extend this idea to the sum of all vehicle wait times in the system to encourage cooperation between agents \cite{10.3389/frai.2022.805823}.
 Furthermore, other sophisticated reward functions such as traffic pressure, augmented rewards based on intersection efficiency, and rewards based on ontology adherence have been explored \cite{ault2021reinforcement} \cite{Ghanadbashi2023}.
-In this project, the cumulative delay reward function \ref{eq:cumulative_delay} will be used.
-However, the cumulative delay will be the sum of all vehicles in the system instead of at the intersection level, where \(V_t\) is the set of all vehicles present in the simulation.
+In this project, the cumulative delay reward function \ref{eq:cumulative_delay} is used, but further experiments may use other reward functions.
+The cumulative delay used in the experiments below is the sum of all vehicles in the system instead of at the intersection level, where \(V_t\) is the set of all vehicles present in the simulation.
 The idea behind this is to encourage the agents to work together rather than develop adversarial relationships.
+The mean cumulative delay for all vehicles in the system was also tried, yielding acceptable results.
 
 \begin{equation}
 r_t = D_t - D_{t+1}
@@ -335,11 +337,13 @@ D_t = \sum_{v \in V_t} d_t^v
 \end{equation}
 
 \subsection{Environment Simulator}
-The Simulated Urban MObility (SUMO) environment will be used for experimentation because it has been evaluated and calibrated by the general transportation community \cite{ault2021reinforcement} and is widely used in the literature.
-Additionally, SUMO was chosen for its compatibility with the OpenAI PettingZoo API which helps create a more standard environment interface for RL systems \cite{terry2021pettingzoo}.
+Accepted and widely used, Simulated Urban MObility (SUMO) environment is used for experimentation\cite{ault2021reinforcement}.
+SUMO-RL \footnote{Alegre, L. N. 2019. SUMO-RL. https://github.com/LucasAlegre/sumo-rl.}, an OpenAI PettingZoo API-compatible environment will be used for multiagent simulations \cite{terry2021pettingzoo}.
+It is a Python wrapper that controls SUMO via its Traffic Control Interface (TRACI) API.
 A 4 x 4 grid structure \ref{fig:intersection_grid} of traffic lights will be used as it is also widely used by other papers \cite{Almeida2022MultiagentRL} and is easily understood.
-This will necessitate 16 independent agents.
-As a future work item, studying how agents trained on a 4 x 4 grid environment transfer to more complex environments such as the cities of Cologne or Ingolstadt will be interesting.
+This requires 16 independent agents.
+As a future work item, studying how agents trained on a 4 x 4 grid environment transfer to more complex environments such as the cities of New York or Chicago will be interesting.
+Any arbitrary city can be simulated because the map data can be imported into SUMO allowing it to generate an environment fairly easily.
 
 \begin{figure}[htbp]
   \centering
@@ -349,15 +353,16 @@ As a future work item, studying how agents trained on a 4 x 4 grid environment t
 \end{figure}
 
 \section{Existing Methods}
-\subsection{Traditional Controllers}
-The traffic controllers currently used in most areas today fall into three categories of algorithms: fixed time, max pressure, and greedy.
-Fixed time controllers will set the traffic signal into one of the four modes for a fixed amount of time, cycling through each mode \cite{ault2021reinforcement}.
-Max pressure is the idea of selecting the traffic flow direction based on subtracting the number of cars after the intersection from the number of cars before the intersection \cite{Chen_Wei_Xu_Zheng_Yang_Xiong_Xu_Li_2020}.
-The greedy algorithm selects the mode that allows the direction with maximum queue length through.
+% \subsection{Traditional Controllers}
+% The traffic controllers currently used in most areas today fall into three categories of algorithms: fixed time, max pressure, and greedy.
+% Fixed time controllers will set the traffic signal into one of the four modes for a fixed amount of time, cycling through each mode \cite{ault2021reinforcement}.
+% Max pressure is the idea of selecting the traffic flow direction based on subtracting the number of cars after the intersection from the number of cars before the intersection \cite{Chen_Wei_Xu_Zheng_Yang_Xiong_Xu_Li_2020}.
+% The greedy algorithm selects the mode that allows the direction with maximum queue length through.
 
-\subsection{RL Controllers}
+% \subsection{RL Controllers}
 Most popular RL methods have been applied to TSC including Independent Deep Q-Learning Networks (IDQN), Independent Proximal Policy Optimization (IPPO), MPLight (variant of DQN) \cite{Chen_Wei_Xu_Zheng_Yang_Xiong_Xu_Li_2020}, Feudal Multiagent Advantage Actor-Critic (FMA2C, MA2C) \cite{DBLP:journals/corr/abs-1903-04527}, State Action Reward State Action Lambda \(SARSA(\lambda)\), TD methods \cite{Reza2023}, Self Adaptive Systems (SAS), and ontology-based RL models \cite{Ghanadbashi2023}.
-Based on the results from each of these papers, IDQN appeared to have the most promising performance, and will be discussed further below.
+Based on the results from each of these papers, IDQN appeared to have the most promising performance which will be discussed further below.
+Fixed time, max pressure, and greedy algorithms are not RL algorithms but are kept here as a baseline to reference \cite{ault2021reinforcement} \cite{Chen_Wei_Xu_Zheng_Yang_Xiong_Xu_Li_2020}.
 
 
 \begin{table}[H]
@@ -382,24 +387,27 @@ Ontology        & 17.00\footnotemark[2]                  \\ \hline
 \footnotetext[1]{Data was only collected in one scenario and may not reflect how the model performs in other scenarios.}
 \footnotetext[2]{Data was extracted from graphs.}
 
-\section{Method}
+\section{Experimental Methodology}
 Based on performance data collected in other studies \cite{ault2021reinforcement} \cite{Ghanadbashi2023}, IDQN is the chosen approach to solve the TSC problem.
-IDQN is an off-policy, model-free RL method which uses a deep neural network (Q-network) to map states to actions.
+IDQN is an off-policy, model-free RL method that uses a deep neural network (Q-network) to map states to actions.
 This method incorporates the idea of collecting experience tuples as the agent plays episodes.
-The experience is then used to train a deep neural network and is randomly shuffled to smooth the training data across many past behaviors \cite{DBLP:journals/corr/MnihKSGAWR13}.
+The experience is used to train a deep neural network randomly shuffled to smooth the training data across many past behaviors \cite{DBLP:journals/corr/MnihKSGAWR13}.
 The input to the network is the state information, and the output is a Q-value mapped to each action.
-In the past, non-linear Q-value function approximators (such as a deep neural network) were unsuccessful due to correlations in the sequence of states, and small updates to Q significantly changing the policy \cite{hafiz2020deep}.
-Experience replay and other DQN methods were shown to significantly increase the chances of convergence and improve performance by an order of magnitude \cite{Mnih2015}.
+% In the past, non-linear Q-value function approximators (such as a deep neural network) were unsuccessful due to correlations in the sequence of states, and small updates to Q significantly changing the policy \cite{hafiz2020deep}.
+% Experience replay and other DQN methods were shown to significantly increase the chances of convergence and improve performance by an order of magnitude \cite{Mnih2015}.
 Additionally, simplifying the deep neural network to output only binary values of whether to take the action or not yielded better performance than mapping a Q-value to each action. This is called binary DQN or CS-DQN \cite{hafiz2020deep}.
 First, IDQN will be used to solve the 4x4 grid TSC environment, then binary DQN will be explored to test if it can improve performance metrics.
 An off-policy action selection method known as $\epsilon$-greedy will be used, where $\epsilon$ is the probability the agent will select a random action instead of following the learned policy.
 Higher values of $\epsilon$ encourage exploration, while lower values encourage exploitation.
-The value of $\epsilon$ does not have to be constant throughout the learning process, and choosing an $\epsilon$ value that decays linearly from 1.0 to 0.1 provided good results \cite{Mnih2015}.
+In the experiments below, $epsilon$ decays linearly from 1.0 to 0.1 at a rate of 0.001 per step \cite{Mnih2015}. For performance evaluation, $epsilon = 0$
+The experience replay buffer contains 100,000 elements and training starts when the agent has collected at least 64 experience samples \(batch_size = 64\).
+% The value of $\epsilon$ does not have to be constant throughout the learning process, and choosing an $\epsilon$ value that decays linearly from 1.0 to 0.1 provided good results \cite{Mnih2015}.
 
 \subsection{Convolutional IDQN}
-A convolutional layer can be added to the Q-network showing an increase in performance if the state can be represented as an image.
-The idea behind this is to create an image which a 2x2 kernal can convolve gathering more meaningful state information if nearby pixels map to state information belonging to the same road \cite{ault2020learning}.
+A convolutional layer was added to the Q-network showing an increase in performance if the state can be represented as an image.
+The idea behind this is to create an image in which a 2x2 kernel can convolve gathering more meaningful state information if nearby pixels map to state information belonging to the same road \cite{ault2020learning}.
 An example of the state space represented as an image is shown in figure \ref{fig:state_image_rep} where the image displayed on the left is a representation of the traffic shown on the right.
+Without the convolutional layer at the start of the network, performance was acceptable on the single-agent environment but did not scale well to the 4x4 grid.
 
 \begin{figure}[htbp]
   \centering
@@ -409,7 +417,7 @@ An example of the state space represented as an image is shown in figure \ref{fi
 \end{figure}
 
 After the convolutional layer, 2 fully connected layers are added with 64 units each. The table \ref{tab:model_summary} shows a summary of the network.
-Huber loss is used as a target for the Q-network to minimize using the Adam optimizer which is a variant of the stochastic gradiant desent algorithm.
+Huber loss is used as a target for the Q-network to minimize using the Adam optimizer (a variant of stochastic gradient descent) with a learning rate of 0.001.
 Essentially, Huber loss is a piecewise function combining the resistance to outliers present in absolute loss $L_{abs}(x) = |x|$ and the fast learning (due to its convex nature) of quadratic loss $L_{quadratic}(x) = x^2$.
 Huber loss is represented in equation \ref{eq:huber_loss} with changes to quadratic and absolute loss to make it differentiable.
 
@@ -441,25 +449,25 @@ Huber loss is represented in equation \ref{eq:huber_loss} with changes to quadra
 
 \section{Performance Metrics}
 % - RESCO, injected uncertainty, average vehicle wait time
-% - REinforced Signal COntrol or RESCO is a testbed and benchmark environment for comparison between RL-based signal control algorithms
-REinforced Signal COntrol (RESCO) is a testbed and benchmark environment to help judge the performance of RL-based algorithms for TSC. It comes built-in with the SUMO project and will simulate traffic in the same way it was simulated in other benchmark papers \cite{ault2021reinforcement}. This can be used to compare this project with what has already been done.
-The metrics that are relevant to this project include: total wait time for each vehicle, average delay per vehicle, average number of stops, average queue length, and average trip time \cite{Reza2023}.
+% - Reinforced signal COntrol or RESCO is a testbed and benchmark environment for comparison between RL-based signal control algorithms
+REinforced Signal Control (RESCO) is a testbed and benchmark environment to help judge the performance of RL-based algorithms for TSC. It comes built-in with the SUMO project and will simulate traffic in the same way it was simulated in other benchmark papers \cite{ault2021reinforcement}. This can be used to compare this project with what has already been done.
+The metrics that are relevant to this project include total wait time for each vehicle, average delay per vehicle, average number of stops, average queue length, and average trip time \cite{Reza2023}.
 Studying how the agents respond to injected uncertainty such as an emergency vehicle or increased traffic demands is also an important metric for designing a robust system \cite{DBLP:journals/corr/abs-2004-04778}.
 % - total waiting time, the average delay per vehicle, the average number of stops \cite{Reza2023}
 
 
 % - IDQN model with For DQN and the regulatable variants, the minibatch size is set to 32 and replay capacity at 100,000 transitions.
-% - The epsilon greedy action–selection probability in DQN and its variants is reduced from 0.05 to 0 (full exploit) after 20 training episodes resulting in the observed drop in the graphs.
+% - The epsilon greedy action–-selection probability in DQN and its variants is reduced from 0.05 to 0 (full exploit) after 20 training episodes resulting in the observed drop in the graphs.
 % -The Q–network is a DNN composed of 3 hidden layers with 64 units each, where the first layer is a 2x2 kernel convolutional layer grouping the input for lanes that belong to the same road.
 % - The Huber loss function is used in line with the original DQN work.
-% - Leaky ReLU activation is used for all layers along with the Adam optimizer with a step– size of 0.001, and decay rates β1 and β2 are set as 0.9 and 0.999 respectively.
+% - Leaky ReLU activation is used for all layers along with the Adam optimizer with a step–size of 0.001, and decay rates β1 and β2 are set as 0.9 and 0.999 respectively.
 
 % - Gokcesu2021GeneralizedHL
 % - Huber loss paper:
 % - resistant to outliers in data
-% - learning is fast for quadratic loss to to convex nature
-% - huber loss combines resistant to outliers and fast learning
-% huber loss is a piecewise function combining quadratic loss and absolute loss in a way that is differentiable
+% - learning is fast for quadratic loss to convex nature
+% - Huber loss combines resistance to outliers and fast learning
+% Huber loss is a piecewise function combining quadratic loss and absolute loss in a differentiable way
 
 \section{Single Intersection Results}
 Starting with the simple case, RL methods were applied to a single intersection scenario.
@@ -470,7 +478,7 @@ To get a baseline to compare the RL approaches, a fixed time agent was implement
 Figure \ref{fig:delays_fixed_single} shows the average cumulative delay for this method.
 % and figure \ref{fig:total_stopped_fixed_single} shows the total number of stopped vehicles over 5 episodes.
 Recall in table \ref{tab:avg_delay} the fixed time algorithm had an average delay of 90 seconds.
-However, better performance is expected in the single intersection scenario, and the 90 second number is an average of 5 different scenarios.
+However, better performance is expected in the single intersection scenario, and the 90-second number is an average of 5 different scenarios.
 
 \begin{figure}[htbp]
   \centering
@@ -513,8 +521,8 @@ and \ref{fig:loss_dqn_single} showing the Huber loss function over 5 episodes.
 \end{figure}
 
 \section{4x4 Grid Results}
-For brevity, the fixed time results applied to the 4x4 grid scenario has been left out of this paper.
-In summary, the fixed time round robin approach averages 60 seconds of imposed delays with approximately 100 stopped vehicles in the system at any given time.
+For brevity, the fixed time results applied to the 4x4 grid scenario have been left out of this paper.
+In summary, the fixed time round-robin approach averages 60 seconds of imposed delays with approximately 100 stopped vehicles in the system at any given time.
 16 convolutional IDQN agents were applied to the 4x4 grid, each agent controlling a single traffic signal in the same way as the single intersection experiment.
 Figure \ref{fig:delays_dqn_multi} shows average cumulative delay over along with figure \ref{fig:total_stopped_dqn_multi} showing total stopped vehicles.
 Figure \ref{fig:loss_dqn_multi} plots the Huber loss for each agent labeled as in the image \ref{fig:intersection_grid} above.
@@ -536,15 +544,21 @@ This experiment required many more episodes than the single intersection due to 
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.8\linewidth]{multi_loss.png}
+  \includegraphics[width=1.0\linewidth]{multi_loss.png}
   \caption{Huber Loss DQN 4x4}
   \label{fig:loss_dqn_multi}
 \end{figure}
 
+\section{Challenges Faced}
+As expected, the non-stationary dynamics of the multiagent 4x4 grid environment made it a more difficult problem than the single-agent environment.
+More experimentation must be done with different uncertainty scenarios to build a more robust system that is capable of handling non-stationarity.
+Unexpectedly, the fully connected IDQN agents did not scale well to the 4x4 grid environment, causing experimentation to switch exclusively to using convolutional IDQN agents.
+The research projects \footnote{https://github.com/LucasAlegre/sumo-rl} \footnote{https://github.com/jault/StateStreetSumo} used to bootstrap this project were invaluable but needed debugging and extending to work with Tensorflow 2.x and add the features required for these experiments.
+It is important to be a good steward of the open-source RL space, so contributions are currently in the works.
 % \section{Expected Challenges}
 % The non-stationary nature of multiagent RL problems is known to cause divergence problems due to the constantly changing dynamics.
 % This can be somewhat mitigated by applying a scenario that is consistent across training, but the dynamics will still be changing due to the other agents' learning \cite{DBLP:journals/corr/abs-2004-04778}.
-% Introducing context switches by changing the scenario, for example, making vehicles flow in waves to simulate rush hour is critical to designing a robust traffic system, but will be out of the scope of the initial research goals.
+% Introducing context switches by changing the scenario, for example, making vehicles flow in waves to simulate rush hour is critical to designing a robust traffic system but will be out of the scope of the initial research goals.
 
 % - injecting uncertainty \cite{DBLP}
 
@@ -560,7 +574,8 @@ This experiment required many more episodes than the single intersection due to 
 \checkmark & 3/4  & Perform experiments and generate data   \\
 & 3/18 & Injected uncertainty scenarios          \\
 & 3/24 & Binary DQN experiments                  \\
-& 4/1  & Data compilation and writing            \\ \hline
+& 4/1 & Double DQN and other misc experiments  \\
+& 4/15 & Data compilation and writing            \\ \hline
 \end{tabular}
 \caption{Project Timeline}
 \label{tab:project_timeline}
@@ -568,9 +583,9 @@ This experiment required many more episodes than the single intersection due to 
 
 \section{Conclusion}
 Overall, it was discussed how traffic signal control (TSC) can be formulated in the Markov Decision Process (MDP) paradigm. The state, action, and reward spaces were defined.
-Based on research done applying fixed algorithm and reinforcement learning to TSC, an Independent Deep Q-Learning Network approach was chosen for continued experiments, aiming to reduce the average cumulative delay \(D_t\) to 30.74 seconds or lower.
-The performance will be evaluated using the REinforced Signal Control RESCO toolkit, and simulations will be done on the Simulated Urban MObility SUMO environment.
-Given the partial and non-stationary nature of the TSC problem, it is expected to face divergence challenges. Overall, the project will be completed following the Project Timeline table \ref{tab:project_timeline}.
+Based on research done applying the fixed algorithm and reinforcement learning to TSC, an Independent Deep Q-Learning Network approach was used for experiments, aiming to reduce the average cumulative delay \(D_t\) to 30.74 seconds or lower.
+This was achieved using the convolutional IDQN with a cumulative delay of approximately 20 seconds.
+Given the partial and non-stationary nature of the TSC problem, its divergence challenges were faced, but overcome. Overall, the remainder of the project will be completed following the Timeline table \ref{tab:project_timeline}.
 
 % \appendix
 % \section{Reference Examples}
