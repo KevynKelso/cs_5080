@@ -392,7 +392,9 @@ Based on performance data collected in other studies \cite{ault2021reinforcement
 IDQN is an off-policy, model-free RL method that uses a deep neural network (Q-network) to map states to actions.
 This method incorporates the idea of collecting experience tuples as the agent plays episodes.
 The experience is used to train a deep neural network randomly shuffled to smooth the training data across many past behaviors \cite{DBLP:journals/corr/MnihKSGAWR13}.
-The input to the network is the state information, and the output is a Q-value mapped to each action.
+The input to the network is the state information, and the output is a Q-value mapped to each action \cite{DeAsis2017MultiStepRL}.
+Two networks, a trainer and a target are used to enhance model stability. This is because updates are applied to all state-action pairs during training which may include the next state-action pair.
+To reduce the chances of this happening, the trainer is updated with the target weights less frequently while the target is continuously trained \cite{Fan2019TheoreticalDQ}.
 % In the past, non-linear Q-value function approximators (such as a deep neural network) were unsuccessful due to correlations in the sequence of states, and small updates to Q significantly changing the policy \cite{hafiz2020deep}.
 % Experience replay and other DQN methods were shown to significantly increase the chances of convergence and improve performance by an order of magnitude \cite{Mnih2015}.
 Additionally, simplifying the deep neural network to output only binary values of whether to take the action or not yielded better performance than mapping a Q-value to each action. This is called binary DQN or CS-DQN \cite{hafiz2020deep}.
@@ -412,7 +414,7 @@ Without the convolutional layer at the start of the network, performance was acc
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\linewidth]{state_image_rep.png}
-  \caption{State Image Representation}
+  \caption{Example of Image-Based State Representation in Convolutional IDQN}
   \label{fig:state_image_rep}
 \end{figure}
 
